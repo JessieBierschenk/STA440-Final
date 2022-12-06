@@ -307,7 +307,7 @@ In order to distill art valuations to the objective aspects of the art itself, w
 
 * The type of sale (day or evening) was included as, traditionally, compared to day sales, evening sales tend to [have fewer works being sold, and these pieces tend to sell at much higher price points](https://www.fineartassetadvisor.com/blog/art-amp-finance-newsletter-35-what-is-the-difference-between-daytime-amp-evening-art-auctions).
 
-* The associated surface area of the piece recorded in the sale is included because this characteristic is a purely objective fact of a work. Because this analysis is interested in objective factors that may be associated with the value of art, we will include this. Furthermore, previous [research](https://www.fineartassetadvisor.com/blog/art-amp-finance-newsletter-35-what-is-the-difference-between-daytime-amp-evening-art-auctions) shows evidence of the size of paintings having a positive relationship with price.
+* The associated surface area of the piece recorded in the sale is included because this characteristic is a purely objective fact of a work. Because this analysis is interested in objective factors that may be associated with the value of art, we will include this. Furthermore, previous [research](https://www.fineartassetadvisor.com/blog/art-amp-finance-newsletter-35-what-is-the-difference-between-daytime-amp-evening-art-auctions) shows evidence of the size of paintings having a positive relationship with price. We divided this variable by 100 to make for more interprettable results
 
 * The adjunct century of the piece. This dataset only includes 15th - 17th century work, but as this is an objective characteristic, it will be included. There were 2,854 missing values for this variable. Upon closer examination, all but 3 observations were associated with a school from the 16th-17th century. With this, an additional category was made to reflect this and another categpry to reflect "missing."
 
@@ -329,6 +329,8 @@ In order to distill art valuations to the objective aspects of the art itself, w
 
 * The Consumer Price Index (CPI) is included as it gives context to the state of the (U.S.) economy during the time of the sale. As the U.S. economy is closely intertwined with other developed countries, this proxy is considered adequate for reflecting economic trends during the time of the sale.
 
+* A binary variable indicating if the painting had been in an exhibit or not. Such indication may control for status of a piece and thus what a buyer is willing to bid.
+
 
 #### Unique to Model for Anonymous Paintings
 
@@ -346,29 +348,35 @@ For our model fit to non-anonymous data, we will include the attribution type. A
 
 * Binary indication of whether a piece had a signature or not. This allows for greater authentication and information for a buyer, potential associated with the hammer price. Because anonymous works do not have a known author, this variable is unique to the non-anonymous model.
 
-### Model
+## Results
 
 For this analysis two models are constructed. One fit to the data of non-anonymous work and the other fit to the data of anonymous work. Both will have the same response variable: ln(Hammer Price 2015 USD Equvalent). Given the skew of the the USD hammer price, this transformation was deemed appropriated to reduce variability.
 
 ```{r}
 model_a_data = anon_data
 model_a_data$Prev_Attrib=as.factor(model_a_data$Prev_Attrib)
+model_a_data$EXHIB=as.factor(model_a_data$EXHIB)
 model_a_data$t = scale(model_a_data$t)
-model_a_data$PI_CPI_OK = scale(model_a_data$PI_CPI_OK)
-model_a_data$dim2 = scale(model_a_data$dim2)
+model_a_data$PI_CPI_OK = (model_a_data$PI_CPI_OK-8.3)
+model_a_data$dim2 = (model_a_data$dim2/500)
+model_a_data$dim2 = (model_a_data$dim2-(mean(data$dim2)/500))
+
 
 model_na_data = non_anon_data
-model_na_data$t = scale(model_na_data$t)
-model_na_data$PI_CPI_OK = scale(model_na_data$PI_CPI_OK)
-model_na_data$dim2 = scale(model_na_data$dim2)
+model_na_data$EXHIB=as.factor(model_na_data$EXHIB)
+model_na_data$TYPE_REATTRIB=as.factor(model_na_data$TYPE_REATTRIB)
+model_na_data$t = (model_na_data$t-1946)
+model_na_data$TYPE_REATTRIB = relevel(model_na_data$TYPE_REATTRIB, ref = "not_reattributed")
+model_na_data$PI_CPI_OK = (model_na_data$PI_CPI_OK-8.3)
+model_na_data$dim2 = (model_na_data$dim2/500)
+model_na_data$dim2 = (model_na_data$dim2-(mean(data$dim2)/500))
 
-full_model_anon = lm(data= model_a_data, Log_Hammer ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + Prev_Attrib)
+full_model_anon = lm(data= model_a_data, Log_Hammer ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + Prev_Attrib + EXHIB)
 
-full_model_non_anon = lm(data= model_na_data, Log_Hammer ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + PI_ATTRIB + Scientific_Investig + SIG)
+full_model_non_anon = lm(data= model_na_data, Log_Hammer ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + PI_ATTRIB + Scientific_Investig + SIG+ EXHIB + TYPE_REATTRIB)
 ```
 
 ```{r}
-summary(full_model_anon)
 #releveling
 #Antwerpen School because has the most observations
 #15th century because it is the earliest
@@ -400,7 +408,7 @@ final_model_a = tidy(full_model_anon) %>%
     Variable == "adj_century15th-16th c." ~ "15th-16th century (vs. 15th)",
     Variable == "adj_century16th c." ~ "16th century (vs. 15th)",
     Variable == "adj_century16th-17th c." ~ "16th-17th century (vs. 15th)",
-    Variable == "BY_SCHOOLBelgian" ~ "Beglian School (vs. Antwerpen)",
+    Variable == "adj_centuryn. m." ~ "Century not mentioned (vs. 15th)",
     Variable == "BY_SCHOOLBruges" ~ "Bruges School (vs. Antwerpen)",
     Variable == "BY_SCHOOLBruxelles" ~ "Bruxelles School (vs. Antwerpen)",
     Variable == "BY_SCHOOLFlemish" ~ "Flemish School (vs. Antwerpen)",
@@ -460,14 +468,40 @@ final_model_a = tidy(full_model_anon) %>%
     Variable == "PI_TOPICmythology:t" ~ "Mythology * Year sold",
     Variable == "PI_TOPICstill life:t" ~ "Still Life * Year sold",
     Variable == "PI_TOPICothers:t" ~ "Other Topic * Year sold",
+    Variable == "EXHIB1" ~ "Been in an Exhibit (vs. not)",
 
     ))
 ```
 
 ```{r}
-final_model_a[c(1:12, 21:61), ]  %>%
+final_model_a[c(1:12, 21:62), ]  %>%
   kable(format = "markdown", digits=3, caption ="Anonymous Model")
   
+```
+The baseline for this model is interpreted as follows:
+
+An evening sale; The dataset's average painting surface area of 4945 sqr cm; 15th century painting; Antwerpen School; Paid for with British Pounds; Collection type not specified; Sold in the first year recorded in the dataset (1946); Of a religious topic; Sold at a top tier auction house; No publications on the painting; No date on the painting; Painted in oil on a panel; CPI at time of sale was 8.3 (recorded for 1946); Was not Reattributed; And has not been in an exhibit.
+
+We will consider the median hammer price in our interpretations rather than the mean as unconventionally high hammer prices caused by extreme bidding distort the average. Note that "accounting for all other factors" in the followinf interpretations refers to the baseline metrics. From the model, some interesting interpretations are:
+
+* As expected, the median hammer price for an evening sale vs. a day sale is expected to multiply by a factor of 5.534, after accounting for all other factors.
+
+* For every additional 500 sqr cm (just over 0.5 sqr ft) the median hammer price is expected to multiply by a factor of 1.014, after accounting for all other factors.
+
+* The median hammer price for a purchase in USD vs. Pounds is expected to multiply by a factor of 1.259, after accounting for all other factors.
+
+* The median hammer price for a purchase from a private collected vs. an unspecified collectiom is expected to multiply by a factor of 1.485, after accounting for all other factors.
+
+* The median hammer price for an auction not at top tier auction houses is expected to be less than at a top tier, after accounting for all other factors.
+
+* The median hammer price for a painting with publications on the work is expected to multiply by a factor of 1.690 compared to no publications, after accounting for all other factors.
+
+* For each additional year above 1946, the median hammer price for a sale is expected to multiply by a factor of 2.450, after accounting for all other factors.
+
+* For each additional year above 1946, the median hammer price for a mythology vs. a religious topic painting is expected to multiply by a factor of 1.278	, after accounting for all other factors.
+
+```{r}
+#plot(full_model_anon)
 ```
 
 
@@ -558,73 +592,39 @@ final_model_non_a = tidy(full_model_non_anon) %>%
     Variable == "PI_TOPICmythology:t" ~ "Mythology * Year sold",
     Variable == "PI_TOPICstill life:t" ~ "Still Life * Year sold",
     Variable == "PI_TOPICothers:t" ~ "Other Topic * Year sold",
+    Variable == "EXHIB1" ~ "Been in an Exhibit (vs. not)",
+    Variable == "TYPE_REATTRIBnegative_reattrib" ~ "Reattrubted to a Less Profitable Attrib. (vs. not)",
+    Variable == "TYPE_REATTRIBpositive_reattrib" ~ "Reattrubted to a More Profitable Attrib. (vs. not)",
     ))
 ```
 
 ```{r}
-final_model_non_a[c(1:14, 21:73),]  %>%
+final_model_non_a[c(1:14, 21:76),]  %>%
   kable(format = "markdown", digits=3, caption ="Non-Anonymous Model")
   
 ```
 
+The baseline for this model is interpreted as follows:
+An evening sale; The dataset's average painting surface area of 4945 sqr cm; 15th century painting; Antwerpen School; Paid for with British Pounds; Collection type not specified; Sold in the first year recorded in the dataset (1946); Of a religious topic; Sold at a top tier auction house; No publications on the painting; No date on the painting; Painted in oil on a panel; CPI at time of sale was 8.3 (recorded for 1946); Was not Reattributed; Has not been in an exhibit; Was not examined via scientific technology; Was not signed.
+
+We will consider the median hammer price in our interpretations rather than the mean as unconventionally high hammer prices caused by extreme bidding distort the average. Note that "accounting for all other factors" in the following interpretations refers to the baseline metrics. From the model, some interesting interpretations are:
+
+* Similar to the anonymous work, the median hammer price for an evening sale vs. a day sale is expected to multiply by a factor of greater than 1, after accounting for all other factors.
+
+* For every additional 500 sqr cm (just over 0.5 sqr ft) the median hammer price is expected to multiply by a factor of 1.014, after accounting for all other factors.
+
+* As expected, the median hammer price for attributions considered less prestigious as "by" are all expected to multiply by a factor of less than, after accounting for all other factors.
+
+* The median hammer price for pieces that have been in an exhibit vs. have not is expected to multiply by a factor of 1.738	, after accounting for all other factors.
+
+* Similar to the anonymous work, the median hammer price for an dated painting vs. not dated is expected to multiply by a factor of greater than 1, after accounting for all other factors.
+
+* For each additional year above 1946, the median hammer price for a sale is expected to multiply by a factor of 1.071, after accounting for all other factors.
+
+* For each additional year above 1946, the median hammer price for a landscape vs. a religious topic painting is expected to multiply by a factor of 0.988, after accounting for all other factors.
+
+# Discussion
+
+As seen in our interpreted results, the two fitted model for anonymous and non-anonymous works had both similar and dissimilar associations with hammer price and independent vairables after adjusting for baseline metrics.
 
 
-
-
-# Begin Modeling 
-
-```{r}
-full_model = lm(HAM_USD~ ATTRIB+ TYPE_ATTRIB+BY_SCHOOL+ adj_century+ SUBJECT +
-                  PI_TOPIC + PI_TECH + PI_MAT + PI_AH + t + Sales_type +
-                  Sales_periods + CURR + h_cm + w_cm, data=data)
-
-#summary(full_model)
-```
-Above shows the summary statistics of the original full model. According to the corresponding p-values with the coefficients, the independent variables deemed significant in explaining variation in US Dollar hammer price of pieces are the piece being from the Bruges school, the piece being from around the 15th-16th century, the piece being from around the 16th century, the piece being a satirical scene, and the piece being done in the tempura medium.
-
-The following visual compares the original full model with the model after running the AIC selection process. The independent variables listed under (2) represents the covariates remaining in the final model.
-```{r}
-#stargazer(full_model, step_model, type = "text")
-```
-
-```{r}
-#autoplot(step_model)
-```
-These model diagnostics thow that this multi-variate linear model does not adequately explain variation in hammer price of our data. This is just a preliminary analysis, but will need significant alterations.
- in the style of is not as important, school of 
- 
- studio of vs. by an artist czn be the difference if mullions of dollars
- 
- there are a lot of anonymous patinings, and there is a hieracrchy and that hierarchy is usable 
- 
- Old masters galleries make more money than contemporary. Buy paintings "in the style of"/ etc. look at more contemporary
- -artists go up or down in time =
- -how can you use contribution 
-
-```{r}
-data=mutate(data, HAM_USD_log= log(HAM_USD))
-hammer_price_log = ggplot(data = data, aes(x=HAM_USD_log))+geom_density()
-hammer_price_log
-```
-
-
-
-
-
-
-
-
-
-```{r}
-anon_data$PriceCat = factor(anon_data$PriceCat, levels = c("0-500", "500-1k", "1k-5k","5k-10k", "10k-50k", "50k-100k", "100k-500k", "500k-1m", "1m-5m", "5m-10m"))
-price_category = ggplot(data = anon_data, aes(x=PriceCat))+geom_bar(fill= "blue") + labs(title= "Anonymous Paintings", x= "Price", y="Count")
-price_category2 = ggplot(data = non_anon_data, aes(x=PriceCat))+geom_bar(fill= "blue") + labs(title= "Hammer Price Distribution", x= "Price", y="Count")
-#price_category2
-#price_category
-```
-
-```{r}
-ggplot(anon_data, aes(x=dim2, y= log(HAM_USD)))+geom_point() +labs(title = "Figure 8: Hammer Price in 2015 USD vs. Area of Piece", x= "Date", y="Hammer Price (USD")
-
-ggplot(non_anon_data, aes(x=dim2, y= log(HAM_USD)))+geom_point() +labs(title = "Figure 8: Hammer Price in 2015 USD vs. Area of Piece", x= "Date", y="Hammer Price (USD")
-```

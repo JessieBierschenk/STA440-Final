@@ -351,10 +351,20 @@ For our model fit to non-anonymous data, we will include the attribution type. A
 For this analysis two models are constructed. One fit to the data of non-anonymous work and the other fit to the data of anonymous work. Both will have the same response variable: ln(Hammer Price 2015 USD Equvalent). Given the skew of the the USD hammer price, this transformation was deemed appropriated to reduce variability.
 
 ```{r}
-anon_data$Prev_Attrib=as.factor(anon_data$Prev_Attrib)
-full_model_anon = lm(data= anon_data, Log_Hammer ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + Prev_Attrib)
+model_a_data = anon_data
+model_a_data$Prev_Attrib=as.factor(model_a_data$Prev_Attrib)
+model_a_data$t = scale(model_a_data$t)
+model_a_data$PI_CPI_OK = scale(model_a_data$PI_CPI_OK)
+model_a_data$dim2 = scale(model_a_data$dim2)
 
-full_model_non_anon = lm(data= non_anon_data, Log_Hammer ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + PI_ATTRIB + Scientific_Investig + SIG)
+model_na_data = non_anon_data
+model_na_data$t = scale(model_na_data$t)
+model_na_data$PI_CPI_OK = scale(model_na_data$PI_CPI_OK)
+model_na_data$dim2 = scale(model_na_data$dim2)
+
+full_model_anon = lm(data= model_a_data, Log_Hammer ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + Prev_Attrib)
+
+full_model_non_anon = lm(data= model_na_data, Log_Hammer ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + PI_ATTRIB + Scientific_Investig + SIG)
 ```
 
 ```{r}
@@ -455,7 +465,7 @@ final_model_a = tidy(full_model_anon) %>%
 ```
 
 ```{r}
-final_model_a  %>%
+final_model_a[c(1:12, 21:61), ]  %>%
   kable(format = "markdown", digits=3, caption ="Anonymous Model")
   
 ```
@@ -552,7 +562,7 @@ final_model_non_a = tidy(full_model_non_anon) %>%
 ```
 
 ```{r}
-final_model_non_a[c(4:73),]  %>%
+final_model_non_a[c(1:14, 21:73),]  %>%
   kable(format = "markdown", digits=3, caption ="Non-Anonymous Model")
   
 ```

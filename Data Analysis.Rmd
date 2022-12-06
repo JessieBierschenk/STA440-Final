@@ -351,13 +351,14 @@ For our model fit to non-anonymous data, we will include the attribution type. A
 For this analysis two models are constructed. One fit to the data of non-anonymous work and the other fit to the data of anonymous work. Both will have the same response variable: ln(Hammer Price 2015 USD Equvalent). Given the skew of the the USD hammer price, this transformation was deemed appropriated to reduce variability.
 
 ```{r}
+anon_data$Prev_Attrib=as.factor(anon_data$Prev_Attrib)
 full_model_anon = lm(data= anon_data, Log_Hammer ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + Prev_Attrib)
 
 full_model_non_anon = lm(data= non_anon_data, Log_Hammer ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + PI_ATTRIB + Scientific_Investig + SIG)
 ```
 
 ```{r}
-summary(full_model_non_anon)
+summary(full_model_anon)
 #releveling
 #Antwerpen School because has the most observations
 #15th century because it is the earliest
@@ -370,14 +371,105 @@ summary(full_model_non_anon)
 
 ```
 ```{r}
-final_model_non_a = tidy(full_model_non_anon) %>% 
+
+final_model_a = tidy(full_model_anon) %>% 
   dplyr::select(-statistic) %>%
-  mutate(`Confidence (2.5%)` = exp(estimate - ((1.96)*std.error)),
+  mutate(`Confidence (2.5%)` = exp(as.numeric(estimate) - ((1.96)*as.numeric(std.error))),
          `Confidence (97.5%)` = exp(estimate + ((1.96)*std.error)),
           Significant = ifelse(p.value < 0.05, "Yes", "No"),
          `P-Value` = ifelse(p.value<0.001, "<0.001", paste("","",format(round(p.value,3), nsmall = 3), sep="&nbsp;" ))) %>%
   dplyr::select(-std.error, -p.value) %>%
-  mutate(estimate = exp(estimate)) %>%
+  mutate(estimate = exp(as.numeric(estimate))) %>%
+  rename("Variable" = term,
+         "Coefficient" = estimate) %>% #Not sure about the name here
+  relocate(Variable,'Coefficient',`Confidence (2.5%)`,`Confidence (97.5%)`,`P-Value`) %>%
+  mutate(Variable = case_when(
+    Variable == "(Intercept)" ~ "Intercept",
+    Variable == "Sales_typeevening_sale" ~ "Evening Sale (vs. Day)",
+    Variable == "dim2" ~ "Surface Area of Painting",
+    Variable == "adj_century15th-16th c." ~ "15th-16th century (vs. 15th)",
+    Variable == "adj_century16th c." ~ "16th century (vs. 15th)",
+    Variable == "adj_century16th-17th c." ~ "16th-17th century (vs. 15th)",
+    Variable == "BY_SCHOOLBelgian" ~ "Beglian School (vs. Antwerpen)",
+    Variable == "BY_SCHOOLBruges" ~ "Bruges School (vs. Antwerpen)",
+    Variable == "BY_SCHOOLBruxelles" ~ "Bruxelles School (vs. Antwerpen)",
+    Variable == "BY_SCHOOLFlemish" ~ "Flemish School (vs. Antwerpen)",
+    Variable == "BY_SCHOOLGhent" ~ "Ghent School (vs. Antwerpen)",
+    Variable == "BY_SCHOOLLeuven" ~ "Leuven School (vs. Antwerpen)",
+    Variable == "BY_SCHOOLNetherlandish" ~ "Netherlandish School (vs. Antwerpen)",
+    Variable == "PI_TOPICportrait" ~ "Portrait (vs. Religious topic)",
+    Variable == "PI_TOPIClandscape" ~ "Landscape (vs. Religious topic)",
+    Variable == "PI_TOPICallegory" ~ "Allegory (vs. Religious topic)",
+    Variable == "PI_TOPICgenre scene" ~ "Genre Scene (vs. Religious topic)",
+    Variable == "PI_TOPICmythology" ~ "Mythology (vs. Religious topic)",
+    Variable == "PI_TOPICstill life" ~ "Still Life (vs. Religious topic)",
+    Variable == "PI_TOPICothers" ~ "Other Topic (vs. Religious topic)",
+    Variable == "CURRATS" ~ "Purchased in Schillings (vs. British Pound)",
+    Variable == "CURRAUD" ~ "Purchased in Austrian Dollars (vs. British Pound)",
+    Variable == "CURRBEF" ~ "Purchased in Belgian Francs (vs. British Pound)",
+    Variable == "CURRCAD" ~ "Purchased in Canadian Dollars (vs. British Pound)",
+    Variable == "CURRCHF" ~ "Purchased in Swiss Francs (vs. British Pound)",
+    Variable == "CURRCZK" ~ "Purchased in Czech Koruna (vs. British Pound)",
+    Variable == "CURRDEM" ~ "Purchased in Deutsche Mark (vs. British Pound)",
+    Variable == "CURRDKK" ~ "Purchased in Danish Krone (vs. British Pound)",
+    Variable == "CURRESP" ~ "Purchased in Spanish Peseta (vs. British Pound)",
+    Variable == "CURREUR" ~ "Purchased in Euro (vs. British Pound)",
+    Variable == "CURRFIM" ~ "Purchased in Finnish Markka (vs. British Pound)",
+    Variable == "CURRFRF" ~ "Purchased in French Franc (vs. British Pound)",
+    Variable == "CURRHUF" ~ "Purchased in Hungarian Forint (vs. British Pound)",
+    Variable == "CURRIEP" ~ "Purchased in Irish Pound (vs. British Pound)",
+    Variable == "CURRITL" ~ "Purchased in Italian Lira (vs. British Pound)",
+    Variable == "CURRNLG" ~ "Purchased in Dutch Guilder (vs. British Pound)",
+    Variable == "CURRNZD" ~ "Purchased in New Zealand Dollar (vs. British Pound)",
+    Variable == "CURRPLN" ~ "Purchased in Polish Zloty (vs. British Pound)",
+    Variable == "CURRSEK" ~ "Purchased in Swedish Krona (vs. British Pound)",
+    Variable == "CURRUSD" ~ "Purchased in US Dollars (vs. British Pound)",
+    Variable == "CURRZAR" ~ "Purchased in S. African Rand (vs. British Pound)",
+    Variable == "TYPE_COLLECTIONBelgium_coll" ~ "Belgium Collection (vs. Not Specified)",
+    Variable == "TYPE_COLLECTIONmuseum_coll" ~ "Museum Collection (vs. Not Specified)",
+    Variable == "TYPE_COLLECTIONnoble_coll" ~ "Noble Collection (vs. Not Specified)",
+    Variable == "TYPE_COLLECTIONprivate_coll" ~ "Private Collection (vs. Not Specified)",
+    Variable == "TYPE_COLLECTIONroyal_coll" ~ "Royal Collection (vs. Not Specified)",
+    Variable == "t" ~ "Year Sold",
+    Variable == "AH_TYPESBETA" ~ "2nd Tier Auction House (vs. Top Tier)",
+    Variable == "AH_TYPESDELTA" ~ "3rd Tier Auction House (vs. Top Tier)",
+    Variable == "AH_TYPESGAMMA" ~ "4th Tier Auction House (vs. Top Tier)",
+    Variable == "Literature1" ~ "Publications on Painting (vs. None)",
+    Variable == "DAT1" ~ "Date on Painting (vs. None)",
+    Variable == "PI_TECHothers" ~ "Other Medium (vs. Oil)",
+    Variable == "PI_TECHtempera" ~ "Temoera Medium (vs. Oil)",
+    Variable == "PI_MATcanvas" ~ "Canvas Material (vs. Panel)",
+    Variable == "PI_MATcopper" ~ "Copper Material (vs. Panel)",
+    Variable == "PI_MATothers" ~ "Other Material (vs. Panel)",
+    Variable == "PI_CPI_OK" ~ "CPI at time of sale",
+    Variable == "Prev_Attrib1" ~ "Had Previous Attribute (vs. Didn't)",
+    Variable == "PI_TOPICportrait:t" ~ "Portrait * Year sold",
+    Variable == "PI_TOPIClandscape:t" ~ "Landscape * Year sold",
+    Variable == "PI_TOPICallegory:t" ~ "Allegory * Year sold",
+    Variable == "PI_TOPICgenre scene:t" ~ "Genre Scene * Year sold",
+    Variable == "PI_TOPICmythology:t" ~ "Mythology * Year sold",
+    Variable == "PI_TOPICstill life:t" ~ "Still Life * Year sold",
+    Variable == "PI_TOPICothers:t" ~ "Other Topic * Year sold",
+
+    ))
+```
+
+```{r}
+final_model_a  %>%
+  kable(format = "markdown", digits=3, caption ="Anonymous Model")
+  
+```
+
+
+```{r}
+final_model_non_a = tidy(full_model_non_anon) %>% 
+  dplyr::select(-statistic) %>%
+  mutate(`Confidence (2.5%)` = exp(as.numeric(estimate) - ((1.96)*as.numeric(std.error))),
+         `Confidence (97.5%)` = exp(estimate + ((1.96)*std.error)),
+          Significant = ifelse(p.value < 0.05, "Yes", "No"),
+         `P-Value` = ifelse(p.value<0.001, "<0.001", paste("","",format(round(p.value,3), nsmall = 3), sep="&nbsp;" ))) %>%
+  dplyr::select(-std.error, -p.value) %>%
+  mutate(estimate = exp(as.numeric(estimate))) %>%
   rename("Variable" = term,
          "Coefficient" = estimate) %>% #Not sure about the name here
   relocate(Variable,'Coefficient',`Confidence (2.5%)`,`Confidence (97.5%)`,`P-Value`) %>%
@@ -457,18 +549,13 @@ final_model_non_a = tidy(full_model_non_anon) %>%
     Variable == "PI_TOPICstill life:t" ~ "Still Life * Year sold",
     Variable == "PI_TOPICothers:t" ~ "Other Topic * Year sold",
     ))
-
-final_model_non_a %>%
-  kable(format = "markdown", digits = 3, caption ="Non-Anonymous Model")
-  
-    
-    
 ```
 
-
-
-
-
+```{r}
+final_model_non_a[c(4:73),]  %>%
+  kable(format = "markdown", digits=3, caption ="Non-Anonymous Model")
+  
+```
 
 
 

@@ -31,6 +31,8 @@ library(kableExtra)
 #install.packages("formattable")
 library(formattable)
 library("broom")
+library(scales)
+#install.packages("scales")
 ```
 
 ```{r}
@@ -65,9 +67,10 @@ scraped_data = scraped_data %>%
 
 scraped_data= scraped_data %>% 
   mutate(Date= recode_factor(Date, "2nd"="2nd", "3rd"= "3rd","7th"="7th", "9th"="9th", "10th"="10th", "11th"="11th", "14th"="14th", "15th"="15th", "16th"="16th", "17th"="17th", "18th"="18th", "19th"="19th", "20th"="20th", "21st"="21st", .ordered = TRUE ), Date_numeric= NA)
-
+```
+```{r}
 scraped_data$Date_numeric = as.numeric(gsub(".{2}$", "", scraped_data$Date))
-scraped_data$Date[is.na(scraped_data$Date)==T] <- "Missing"
+#scraped_data$Date[is.na(scraped_data$Date)==T] <- "Missing"
 
 ```
 
@@ -78,7 +81,7 @@ Date_boxplot = ggplot(data=subset(scraped_data, !is.na(Date))) + geom_boxplot(ae
 Date_scatter = ggplot(scraped_data) + geom_point(aes(y = Price, x= Date_numeric))+ labs(title = "Hammer Price vs. Century", y = "Hammer Price (USD)", x="Century (Date)")
 ```
 
-```{r, fig.height= 4}
+```{r, fig.height= 3.5}
 grid.arrange(Date_boxplot,Date_scatter, nrow=2, top = "Figure 1: Relation Betweem Price and Date / Century of Piece" )
 ```
 
@@ -89,13 +92,13 @@ Cat_boxplot = ggplot(scraped_data) + geom_boxplot(aes(x = Price, y= Category))+ 
 Region_boxplot = ggplot(scraped_data) + geom_boxplot(aes(x = Price, y= Region))+ labs(title = "Price Distribution by Region of Currency Purchased With", x = "Hammer Price (USD)", y="Region of Currency")
 ```
 
-```{r, fig.height= 5}
+```{r, fig.height= 5.5}
 grid.arrange(Cat_boxplot,Region_boxplot, nrow=2, top = "Figure 2: Relation Betweem Price and Medium/Regoin of Currency Purchased With" )
 ```
 
 After this initial bivariate exploration, we also want to analyze the variable of interest--hammer price. Figure 2 shows the distribution of hammer prices in our data set. As seen below, the distribution is right skewed with a majority of the hammer prices between \$45-\$2,500
 
-```{r}
+```{r, fig.height= 3}
 Price_density = ggplot(scraped_data, aes(x = Price)) + geom_histogram(aes(y=..density..), colour=1, fill="white")+xlim(0,10000)+ geom_density(lwd=1, color=4, fill=4, alpha =0.25)+labs(title = "Figure 3: Price Distribution", x = "Hammer Price (USD)", y="Count")
 Price_density
 ```
@@ -141,13 +144,14 @@ studio_total_per = length(which(data$PI_ATTRIB == "studio of"))/length(data$PI_A
 style_total_per = length(which(data$PI_ATTRIB == "style of"))/length(data$PI_ATTRIB)
 
 
-tab_freq_attrib = matrix(c(anon_total, attrib_total, by_total, circle_total, follower_total, school_total, studio_total,style_total,total_attrib, percent(anon_total_per, accuracy =0.1),  percent(attrib_total_per, accuracy = 0.1), percent(by_total_per, accuracy =0.1), percent(circle_total_per, accuracy =0.1), percent(follower_total_per, accuracy =0.1), percent(school_total_per, accuracy =0.1), percent(studio_total_per, accuracy =0.1),percent(style_total_per, accuracy =0.1), "100%"), ncol=9, byrow = TRUE)
+tab_freq_attrib = matrix(c(anon_total, attrib_total, by_total, circle_total, follower_total, school_total, studio_total,style_total,total_attrib, percent(anon_total_per, accuracy = 0.1),  percent(attrib_total_per, accuracy = 0.1), percent(by_total_per, accuracy = 0.1), percent(circle_total_per, accuracy = 0.1), percent(follower_total_per, accuracy = 0.1), percent(school_total_per, accuracy = 0.1), percent(studio_total_per, accuracy = 0.1),percent(style_total_per, accuracy = 0.1), "100%"), ncol=9, byrow = TRUE)
 colnames(tab_freq_attrib)= c( "Anonymous", "Attributed to", "By", "Circle of", "Follower of", "School of", "Studio of", "Style of", "Total")
 rownames(tab_freq_attrib)=c("Count", "Percent")
 tab_freq_attrib %>% 
-  kbl(align = rep("c", 4), caption = "Table 1: Freuqency of Attributes in Data") %>%
+  kbl(align = rep("c", 4), caption = "Frequency of Attributes in Data") %>%
   kable_styling(latex_options= c("striped","scale_down"))
 ```
+
 
 Professor Rademecker's extensive research is an important part of understanding naming conventions in the art economy. However, given the subjective nature of art as a commodity, there remains unanswered questions about how pieces are valued independent of their association with the status of an artist/school of art. In this analysis, we will compare purely anonymous art with art that has some recognized attribution in order to distill valuations solely to aspects of the art itself. Our primary research question is as follows:
 
@@ -201,7 +205,9 @@ hammer_price_anon = ggplot(data = anon_data, aes(x=HAM_USD))+geom_histogram()+xl
 
 hammer_price_non_log = ggplot(data = non_anon_data, aes(x=log(HAM_USD)))+geom_histogram(fill="blue") + labs(title= "Log Transformed", x= "Log(Hammer Price (2015 USD Equivalent))", y = "Count")
 hammer_price_anon_log = ggplot(data = anon_data, aes(x=log(HAM_USD)))+geom_histogram() + labs(title= "Log Transformed", x= "Log(Hammer Price (2015 USD Equivalent))", y = "Count")
+```
 
+```{r, fig.height=3.5}
 grid.arrange(hammer_price_non, hammer_price_anon,hammer_price_non_log, hammer_price_anon_log, ncol= 2, top = "Figure 4: Comparison of Hammer Price Distribution Between 
 Non-Anonymous and Anonymous Paintings (with Log Transformations)")
 
@@ -213,7 +219,9 @@ Specifically, nativity scenes were the most common subject for both anonymous an
 Subject_Plot = ggplot(data = anon_data, aes(x=PI_TOPIC))+geom_bar() + labs(title= "Anonymous", x= "Subject", y="Count")+theme(axis.text.x = element_text(angle = 90,hjust=0.95,vjust=0.2))
 
 Subject_Plot2 = ggplot(data = non_anon_data, aes(x=PI_TOPIC))+geom_bar(fill= "blue") + labs(title= "Non-Anonymous", x= "Subject", y="Count")+theme(axis.text.x = element_text(angle = 90, hjust=0.95,vjust=0.2))
+```
 
+```{r, fig.height= 3}
 
 grid.arrange(Subject_Plot2, Subject_Plot, ncol= 2, top = "Figure 5: Comparison of Painting Subject
 Between Non-Anonymous and Anonymous Paintings")
@@ -242,7 +250,7 @@ grid.arrange( SubjectPrice_Plot_Condensed1, SubjectPrice_Plot_Condensed , top= "
 
 Illustrated in Figure 7, we see higher log(hammer prices in later years). We are using the log transformed versionas, seen previously, the distribution is clearly right skewed. As the hammer prices were adjusted for inflation/deflation, this trend suggests that as the art economy continued to develop, auction prices saw higher prices than had be seen. 
 
-```{r}
+```{r fig.height= 2.5}
 data=data %>% 
   mutate(Anonymous = ifelse(PI_NAME == "ANONYMOUS_MASTERS", 1, 0))
 
@@ -307,7 +315,7 @@ In order to distill art valuations to the objective aspects of the art itself, w
 
 * The type of sale (day or evening) was included as, traditionally, compared to day sales, evening sales tend to [have fewer works being sold, and these pieces tend to sell at much higher price points](https://www.fineartassetadvisor.com/blog/art-amp-finance-newsletter-35-what-is-the-difference-between-daytime-amp-evening-art-auctions).
 
-* The associated surface area of the piece recorded in the sale is included because this characteristic is a purely objective fact of a work. Because this analysis is interested in objective factors that may be associated with the value of art, we will include this. Furthermore, previous [research](https://www.fineartassetadvisor.com/blog/art-amp-finance-newsletter-35-what-is-the-difference-between-daytime-amp-evening-art-auctions) shows evidence of the size of paintings having a positive relationship with price. We divided this variable by 100 to make for more interprettable results
+* The associated surface area of the piece recorded in the sale is included because this characteristic is a purely objective fact of a work. Because this analysis is interested in objective factors that may be associated with the value of art, we will include this. Furthermore, previous [research](https://www.fineartassetadvisor.com/blog/art-amp-finance-newsletter-35-what-is-the-difference-between-daytime-amp-evening-art-auctions) shows evidence of the size of paintings having a positive relationship with price. We divided this variable by 500 to make for more interprettable results
 
 * The adjunct century of the piece. This dataset only includes 15th - 17th century work, but as this is an objective characteristic, it will be included. There were 2,854 missing values for this variable. Upon closer examination, all but 3 observations were associated with a school from the 16th-17th century. With this, an additional category was made to reflect this and another categpry to reflect "missing."
 
@@ -455,7 +463,7 @@ final_model_a = tidy(full_model_anon) %>%
     Variable == "Literature1" ~ "Publications on Painting (vs. None)",
     Variable == "DAT1" ~ "Date on Painting (vs. None)",
     Variable == "PI_TECHothers" ~ "Other Medium (vs. Oil)",
-    Variable == "PI_TECHtempera" ~ "Temoera Medium (vs. Oil)",
+    Variable == "PI_TECHtempera" ~ "Tempera Medium (vs. Oil)",
     Variable == "PI_MATcanvas" ~ "Canvas Material (vs. Panel)",
     Variable == "PI_MATcopper" ~ "Copper Material (vs. Panel)",
     Variable == "PI_MATothers" ~ "Other Material (vs. Panel)",
@@ -571,7 +579,7 @@ final_model_non_a = tidy(full_model_non_anon) %>%
     Variable == "Literature1" ~ "Publications on Painting (vs. None)",
     Variable == "DAT1" ~ "Date on Painting (vs. None)",
     Variable == "PI_TECHothers" ~ "Other Medium (vs. Oil)",
-    Variable == "PI_TECHtempera" ~ "Temoera Medium (vs. Oil)",
+    Variable == "PI_TECHtempera" ~ "Tempera Medium (vs. Oil)",
     Variable == "PI_MATcanvas" ~ "Canvas Material (vs. Panel)",
     Variable == "PI_MATcopper" ~ "Copper Material (vs. Panel)",
     Variable == "PI_MATothers" ~ "Other Material (vs. Panel)",
@@ -625,6 +633,10 @@ We will consider the median hammer price in our interpretations rather than the 
 
 # Discussion
 
-As seen in our interpreted results, the two fitted model for anonymous and non-anonymous works had both similar and dissimilar associations with hammer price and independent vairables after adjusting for baseline metrics.
+As seen in our interpreted results, the two fitted model for anonymous and non-anonymous works had both similar and dissimilar associations with hammer price and independent variables after adjusting for baseline metrics. As our focus was mainly concerning with objective factors that are associated with the "value" (in this context measured by hammer price) of art, we will focus on the model fit to the anonymous sales and then look at the non-anonymous model for interesting comparisons. Objective factors like surface area, century made, School, material, and subject/topic of the painting were all deemed significant in the model. Analyzing anonymous art sakes serves as a way to distill artwork (in this case Flemish paintings from the 15th-17th century) down to the pure qualities that are associated with it's value. Ultimately, understanding art outside of the context of it's creator can strip it to a more intrinsic value.
+
+Some limitations to this analysis rest in the asymmetry of accessible data for anonymous vs. non-anonymous work. There wa substantially more data for non-anonymous pieces. Another limitation is that there is no evidence to believe that findings for these paintings (Flemish Old Master from 15th - 17th century) can be extrapolated to other genres. 
+
+With a significant lack of accessibility and transparency in auction houses and art markets, there remains an extensive amount of meaningful research to be done, especially in the area of anonynmous work. Rademecker's research and data provides a robust example of the type of insights that can be gained from such analases. 
 
 

@@ -1,0 +1,592 @@
+---
+title: "Main Analysis"
+output: pdf_document
+urlcolor: blue
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.align = 'center', out.extra = '', cache = TRUE)
+knitr::opts_chunk$set(message = FALSE, warning= FALSE)
+```
+
+```{r library, include=FALSE, message=FALSE, warning=FALSE,}
+library(tidyverse)
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(gridExtra)
+library(grid)
+library(ggplot2)
+library(lattice)
+#install.packages("knitr")
+library(knitr)
+library(MASS)
+#install.packages("stargazer")
+library(stargazer)
+#install.packages("ggfortify")
+library(ggfortify)
+library(kableExtra)
+#install.packages("tidyverse")
+#install.packages("formattable")
+library(formattable)
+library("broom")
+library(scales)
+#install.packages("scales")
+```
+
+```{r}
+data = read_excel("Database_Radermecker.xlsx")
+data$HAM_USD = as.numeric(data$HAM_USD)
+
+```
+
+
+# Introduction
+
+The analyzation of paintings has appeared across various conversations in art, politics, history, and economics, but a question still exists: How do we put a price (as a proxy for value) on such a personal and arbitrary good? Business professionals might say that [appraisals are based largely on what the art has already sold for or typically sells](https://www.artbusiness.com/appsellart.html#:~:text=A%20realistic%20appraised%20value%20is%20based%20largely%20on%20what%20the,that%20have%20already%20taken%20place.); art historians might say that [value is determined by its cultural significance within a given time period.](https://arthistoryproject.com/essays/the-value-of-art/) Yet the question still remains of what objective qualities inherent to a work add value? In the hopes of further exploring such question, this analysis focuses on art auction sales and, by using anonymous works, attempts to strip paintings of their intangible ties to fame or reputation in order to isolate and identify the objective qualities that are associated with art prices. 
+
+[Previous research](https://ideas.repec.org/p/sol/wpaper/2013-264567.html) has identified evidence of a strong assocation between formal naming conventions used by art historians and final auction prices (known as hammer prices). Today, artists are easily identifiable as it has become common practice to sign artwork. In the past (1350-1850), close attention was typically paid to the provisional name of the creator and its long-term recognition, typology, etc. Art markets are characterized by strong asymmetry of information and high uncertainty surrounding quality, leading to difficulty in accurate pricing and therefore emphasizing the importance of the reputation of the creator. To circumvent this reliance on reputation, this analysis will focus on sales of anonymous paintings in an adaption of a dataset from [Anne-Sophie Radermecker's work on naming conventions and anonymous art](https://ideas.repec.org/p/sol/wpaper/2013-264567.html) My primary research question is as follows:
+
+**(1) What objective, indesputable qualities of a painting are associated with it's value (price) when the connection to its creator is not applicable or controlled for?**
+
+The dataset in this analysis includes 13,211 observations of individual painting sales of 15th-17th century Flemish work and captures sales occuring as early as 1946 to as late as 2015. The data include extensive information for each piece including the naming convention, the working title, the hammer price in 2015 U.S. dollar amount, information about the medium and content of the piece, and information about the date, place, and type of the auction sale. Rademecker describes the full dataset being [mainly collected from the Hislop Art’s Sales Index, and have been systematically compared with data recorded by Artprice and the World Collectors Annuary to provide a comprehensive corpus of sources.](https://ideas.repec.org/p/sol/wpaper/2013-264567.html) 
+
+The dataset includes 1,581 sales of purely anonymous paintings and 11,630 sales of paintings with either a distinct author or some attribution that is expert-verified. [Previous research](https://www.researchgate.net/publication/320007117_An_artist's_perceived_value_Development_of_a_measurement_scale) suggests that "the artist’s name as a brand influences the general assessment of a work and, its economic value and what an art collector is willing to pay for it." Therefore, as mentioned in [Rademecker's research](https://ideas.repec.org/p/sol/wpaper/2013-264567.html), market players wanting to resolve the issue of anonymity in art employ naming strategies developed by art historians to give alternative names to unrecorded artist (attributions). Listed below are conventional naming mechanisms widely used and accepted in contemporary art markets:
+
+* "By" or "By and studio" are used in conjunction with a name when there are records, material, and formal and stylistic evidence of a piece's creator. 
+
+* "Attributed to", "After", "Studio of", "Circle of", "School of", "Follower of", and "Style of" are attributes used to indirectly link an anonymous painting to a known artist, style, or school through a verifiable method.
+
+Art that cannot be given some sort of attribute is considered anonymous. According to Rademecker, there is little work done in art history or economic research that explores this relationship of attributes with price. And, given the guarded and sectretive nature art markets, it is difficult to access auction/price data and even more difficult to access information on anonymous, obscure paintings not tied to any creator (attribute);  because of this, this analysis will use the unique opportunity to analyze anonymous work (as well as attribuyted work) to form a more comprehensive understanding of art valuations. The main response vairable of interest in this analysis is the median hammer price (To allow for inflation, prices are deflated using the US Consumer Price Index, and expressed in 2015 US dollars). The median is the intended interest because [meticulous rounding up by auctioneers and theatrical tactics](https://www.taipeitimes.com/News/editorials/archives/2015/11/04/2003631633) can create highly skewed hammer prices; thus, the median is thought to be a more reflective summary statistic.
+
+Table 1 shows the frequency of attribute types in our data set. 12% of the pieces in this dataset are considered anonymous while the rest hav some attribute.
+
+
+```{r}
+addparentheses <- function(x){paste("(  ", x, " )")}
+data$PI_ATTRIB[data$PI_NAME=="ANONYMOUS_MASTERS"]<-"Anonymous"
+data$PI_ATTRIB[data$PI_ATTRIB=="after"]<-"by"
+data$PI_ATTRIB[data$PI_ATTRIB=="by & studio"]<-"by"
+
+anon_total = length(which(data$PI_ATTRIB == "Anonymous"))
+attrib_total = length(which(data$PI_ATTRIB == "attributed to"))
+by_total = length(which(data$PI_ATTRIB == "by"))
+circle_total = length(which(data$PI_ATTRIB == "circle of"))
+follower_total = length(which(data$PI_ATTRIB == "follower of"))
+school_total = length(which(data$PI_ATTRIB == "school of"))
+studio_total = length(which(data$PI_ATTRIB == "studio of"))
+style_total = length(which(data$PI_ATTRIB == "style of"))
+total_attrib = length(data$PI_ATTRIB)
+
+anon_total_per = length(which(data$PI_ATTRIB == "Anonymous"))/length(data$PI_ATTRIB)
+attrib_total_per = length(which(data$PI_ATTRIB == "attributed to"))/length(data$PI_ATTRIB)
+by_total_per = length(which(data$PI_ATTRIB == "by"))/length(data$PI_ATTRIB)
+circle_total_per = length(which(data$PI_ATTRIB == "circle of"))/length(data$PI_ATTRIB)
+follower_total_per = length(which(data$PI_ATTRIB == "follower of"))/length(data$PI_ATTRIB)
+school_total_per = length(which(data$PI_ATTRIB == "school of"))/length(data$PI_ATTRIB)
+studio_total_per = length(which(data$PI_ATTRIB == "studio of"))/length(data$PI_ATTRIB)
+style_total_per = length(which(data$PI_ATTRIB == "style of"))/length(data$PI_ATTRIB)
+
+
+tab_freq_attrib = matrix(c(anon_total, attrib_total, by_total, circle_total, follower_total, school_total, studio_total,style_total,total_attrib, percent(anon_total_per, accuracy = 0.1),  percent(attrib_total_per, accuracy = 0.1), percent(by_total_per, accuracy = 0.1), percent(circle_total_per, accuracy = 0.1), percent(follower_total_per, accuracy = 0.1), percent(school_total_per, accuracy = 0.1), percent(studio_total_per, accuracy = 0.1),percent(style_total_per, accuracy = 0.1), "100%"), ncol=9, byrow = TRUE)
+colnames(tab_freq_attrib)= c( "Anonymous", "Attributed to", "By", "Circle of", "Follower of", "School of", "Studio of", "Style of", "Total")
+rownames(tab_freq_attrib)=c("Count", "Percent")
+tab_freq_attrib %>% 
+  kbl(align = rep("c", 4), caption = "Frequency of Attributes in Data") %>%
+  kable_styling(latex_options= c("striped","scale_down"))
+```
+
+
+## Exploratory Data Analysis
+
+```{r}
+
+data$Sales_type[data$Sales_type=="Day_sale"] <- "day_sale"
+data$PI_TOPIC = factor(data$PI_TOPIC, levels = c("religious", "portrait", "landscape", "allegory", "genre scene", "mythology", "still life", "others"))
+
+data=data %>% 
+  mutate(Prev_Attrib = as.factor(ifelse(Prev_attr != "n. m.", 1, 0)), Scientific_Investig = as.factor(ifelse(Sc_investig != 0, 1, 0)), Literature = as.factor(ifelse(Detailed_lit != "n. m.", 1, 0)), Log_Hammer = log(HAM_USD), adj_century = ifelse(is.na(adj_century)==TRUE & school != "n. m.", "16th-17th", adj_century ) )
+
+data$adj_century[data$adj_century==1] <- "15th"
+data$adj_century[data$adj_century==2] <- "15th-16th"
+data$adj_century[data$adj_century==3] <- "16th"
+data$adj_century[is.na(data$adj_century)==T] <- "Missing"
+data$CURR[data$CURR=="iTL"] <- "ITL"
+
+
+data$CURR = as.factor(data$CURR)
+data$TYPE_COLLECTION = as.factor(data$TYPE_COLLECTION)
+data$DAT = as.factor(data$DAT)
+data$PI_MAT = as.factor(data$PI_MAT)
+data$PI_ATTRIB = as.factor(data$PI_ATTRIB)
+data$SIG = as.factor(data$SIG)
+
+data$CURR <- relevel(data$CURR, ref = "GBP")
+data$TYPE_COLLECTION <- relevel(data$TYPE_COLLECTION, ref = "not_mentioned")
+data$PI_MAT <- relevel(data$PI_MAT, ref = "panel")
+data$PI_ATTRIB <- relevel(data$PI_ATTRIB, ref = "by")
+
+anon_data = subset(data, PI_NAME == "ANONYMOUS_MASTERS")
+non_anon_data = subset(data, PI_NAME != "ANONYMOUS_MASTERS")
+
+
+```
+
+Our response variable of interest is the median hammer price in 2015 US dollars. As shown in Figure 4, both anonymous and non-anonymous paintings had a relatively similar shape of their price distributions with significant right skew. For non-anonymous paintings, the minimum hammer price in 2015 US dollar equivalent was \$105 and the maximum was \$10,423,009; the median hammer price was \$10,589. For anonymous paintings, the minimum hammer price in 2015 US dollar equivalent was \$263 (higher than non-anonymous) and the maximum was \$2,200,000 (significantly lower than non-anonymous); the median hammer price was \$9,420 ( >\$1,000 less than non-anonymous). This general trend is as expected as the price of anonymous art is not driven up by any particular artist/attribution the way that non-anonymous art is. For both categories, most of prices are in the \$10k - \$50k range.
+
+Below the distributions in Figure 4 are the log-transformations of the hammer price distribution. Because these distribution are orginally right skewed, a log transformation can reduce variability in the data and more closely conform to the normal distribution.
+
+```{r}
+hammer_price_non = ggplot(data = non_anon_data, aes(x=HAM_USD))+geom_histogram(fill="blue")+xlim(0,1000000)+ylim(0,3000) + labs(title= "Non-Anonymous Paintings", x= "Hammer Price (2015 USD Equivalent)", y = "Count")
+hammer_price_anon = ggplot(data = anon_data, aes(x=HAM_USD))+geom_histogram()+xlim(0,1000000)+ylim(0,500) + labs(title= "Anonymous paintings", x= "Hammer Price (2015 USD Equivalent)", y = "Count")
+
+hammer_price_non_log = ggplot(data = non_anon_data, aes(x=log(HAM_USD)))+geom_histogram(fill="blue") + labs(title= "Log Transformed", x= "Log(Hammer Price (2015 USD Equivalent))", y = "Count")
+hammer_price_anon_log = ggplot(data = anon_data, aes(x=log(HAM_USD)))+geom_histogram() + labs(title= "Log Transformed", x= "Log(Hammer Price (2015 USD Equivalent))", y = "Count")
+```
+
+```{r, fig.height=3.5}
+grid.arrange(hammer_price_non, hammer_price_anon,hammer_price_non_log, hammer_price_anon_log, ncol= 2, top = "Figure 4: Comparison of Hammer Price Distribution Between 
+Non-Anonymous and Anonymous Paintings (with Log Transformations)")
+
+```
+
+As shown below, price distributions differ by associated attribution for paintings. 
+
+```{r fig.height=3, fig.width= 6}
+data$PI_ATTRIB = ordered(data$PI_ATTRIB, levels=c("by", "follower of", "studio of", "manner of", "attributed to", "style of","circle of","school of", "Anonymous"))
+attrib_price = ggplot(data)+ geom_boxplot(aes(y= PI_ATTRIB,x= log(HAM_USD), fill = as.factor(Anonymous)))+ labs(title = "Log(Hammer Price) Distribution by Attribution", x = "Log(Hammer Price)", y = "Attribution Type")
+
+attrib_price + theme(legend.position = "none")
+```
+
+
+
+
+Specifically, nativity scenes were the most common subject for both anonymous and non-anonymous art followed by portraits and haigographic scenes (scenes depicting saints). As shown in Figure 5, non-anonymous paintings tend to have more diversity in the topic while most of the anonymous work is concentrated in religious scences. This is, in part, due to the [growing demand for religious and decorative pictures at the time](https://www.academia.edu/6145072/Painting_for_the_market_Commercialization_of_art_in_Antwerps_Golden_Age) but still an interesting distinction to make. 
+
+```{r}
+Subject_Plot = ggplot(data = anon_data, aes(x=PI_TOPIC))+geom_bar() + labs(title= "Anonymous", x= "Subject", y="Count")+theme(axis.text.x = element_text(angle = 90,hjust=0.95,vjust=0.2))
+
+Subject_Plot2 = ggplot(data = non_anon_data, aes(x=PI_TOPIC))+geom_bar(fill= "blue") + labs(title= "Non-Anonymous", x= "Subject", y="Count")+theme(axis.text.x = element_text(angle = 90, hjust=0.95,vjust=0.2))
+```
+
+```{r, fig.height= 3}
+
+grid.arrange(Subject_Plot2, Subject_Plot, ncol= 2, top = "Figure 5: Comparison of Painting Subject
+Between Non-Anonymous and Anonymous Paintings")
+
+```
+
+To further investigate the characteristics of the pieces grouped by subject matter, we will examine the median hammer-price distribution of each subject type. From Figure 6, it is clear that the median hammer prices per subject so not have the same ordinal pattern across anonymous and non-anonymous paintings. For example, the subject matter with the lowest relative median hammer price in non-anonymous art is portraits whereas among anonymous paintings, portraits have one of the highest relative median hammer prices. Subject matter may be associated with price differently depending on whether a piece is anonymous or not.
+
+```{r}
+subject_price = group_by(anon_data, PI_TOPIC)
+subject_price = mutate(subject_price, Price_Med = median(HAM_USD, na.rm = T))
+
+data_subject_price = distinct(subject_price, PI_TOPIC, Price_Med)
+
+SubjectPrice_Plot_Condensed = ggplot(data = data_subject_price, aes(PI_TOPIC, Price_Med))+geom_bar(stat= "identity") + labs(title= "Anonymous", x= "Subject", y="Median Hammer Price")+theme(axis.text.x = element_text(angle = 90))
+
+subject_price1 = group_by(non_anon_data, PI_TOPIC)
+subject_price1 = mutate(subject_price1, Price_Med = median(HAM_USD, na.rm = T))
+
+data_subject_price1 = distinct(subject_price1, PI_TOPIC, Price_Med)
+
+SubjectPrice_Plot_Condensed1 = ggplot(data = data_subject_price1, aes(PI_TOPIC, Price_Med))+geom_bar(stat= "identity", fill= "blue") + labs(title= "Non-Anonymous", x= "Subject", y="Median Hammer Price")+theme(axis.text.x = element_text(angle = 90))
+
+grid.arrange( SubjectPrice_Plot_Condensed1, SubjectPrice_Plot_Condensed , top= "Figure 6: Hammer Price Medians by Subject", ncol=1)
+```
+
+Illustrated in Figure 7, we see higher log(hammer prices in later years). We are using the log transformed versionas, seen previously, the distribution is clearly right skewed. As the hammer prices were adjusted for inflation/deflation, this trend suggests that as the art economy continued to develop, auction prices saw higher prices than had be seen. 
+
+```{r fig.height= 2.5}
+data=data %>% 
+  mutate(Anonymous = ifelse(PI_NAME == "ANONYMOUS_MASTERS", 1, 0))
+
+ggplot(data, aes(x=DATE, y= log(HAM_USD)))+geom_point() +labs(title = "Figure 7: Log(Hammer Price in 2015 USD) vs. Date of Sale", x= "Date", y="Log(Hammer Price USD)")
+
+```
+An important thing to note is that not all characteristics differ depending on the anonymous status of a piece. Some relationships are consistent across art regardless of attribution. Through this analysis, we ensure that these characteristics are controlled for and included as we begin our modeling process. Figure 8 illustrates that despite the anonymous status of pieces, sale records indicate that evening sales tend to have higher price distributions than day sales, and paintings in specified collection types tend to have higher price distributions than paintings with no information of collection type. 
+
+```{r}
+Day_Sale_anon = anon_data
+Day_Sale_anon$Sales_type[Day_Sale_anon$Sales_type=="day_sale"] <- "Day"
+Day_Sale_anon$Sales_type[Day_Sale_anon$Sales_type=="evening_sale"] <- "Evening"
+
+Day_Sale_non_anon = non_anon_data
+Day_Sale_non_anon$Sales_type[Day_Sale_non_anon$Sales_type=="day_sale"] <- "Day"
+Day_Sale_non_anon$Sales_type[Day_Sale_non_anon$Sales_type=="evening_sale"] <- "Evening"
+
+anon_sal = ggplot(Day_Sale_anon, aes(x=Sales_type, y=log(HAM_USD)))+geom_boxplot() + labs(tile="Anonymous" , x = "Sale Type" , y = "Log(Hammer Price)")
+n_anon_sal=ggplot(Day_Sale_non_anon, aes(x=Sales_type, y=log(HAM_USD)))+geom_boxplot(fill="blue")+labs(tile="Non-Anonymous" , x = "Sale Type" , y = "Log(Hammer Price)")
+
+```
+
+```{r}
+Collection_data_a = subset(anon_data, select = c("TYPE_COLLECTION","HAM_USD" ))
+Collection_data_a$TYPE_COLLECTION = as.character(Collection_data_a$TYPE_COLLECTION)
+Collection_data_a$TYPE_COLLECTION[Collection_data_a$TYPE_COLLECTION=="Belgium_coll"] <- "Belgium"
+Collection_data_a$TYPE_COLLECTION[Collection_data_a$TYPE_COLLECTION=="museum_coll"] <- "Museum"
+Collection_data_a$TYPE_COLLECTION[Collection_data_a$TYPE_COLLECTION=="noble_coll"] <- "Noble"
+Collection_data_a$TYPE_COLLECTION[Collection_data_a$TYPE_COLLECTION=="private_coll"] <- "Private"
+Collection_data_a$TYPE_COLLECTION[Collection_data_a$TYPE_COLLECTION== "royal_coll"] <- "Royal"
+Collection_data_a$TYPE_COLLECTION[Collection_data_a$TYPE_COLLECTION=="not_mentioned"] <- "No Info"
+
+
+Collection_data_a$TYPE_COLLECTION = factor(Collection_data_a$TYPE_COLLECTION, levels = c("Belgium", "Museum", "Noble", "Private", "Royal", "No Info"))
+
+Collection_data_na = non_anon_data
+Collection_data_na$TYPE_COLLECTION = as.character(Collection_data_na$TYPE_COLLECTION)
+Collection_data_na$TYPE_COLLECTION[Collection_data_na$TYPE_COLLECTION=="Belgium_coll"] <- "Belgium"
+Collection_data_na$TYPE_COLLECTION[Collection_data_na$TYPE_COLLECTION=="museum_coll"] <- "Museum"
+Collection_data_na$TYPE_COLLECTION[Collection_data_na$TYPE_COLLECTION=="noble_coll"] <- "Noble"
+Collection_data_na$TYPE_COLLECTION[Collection_data_na$TYPE_COLLECTION=="private_coll"] <- "Private"
+Collection_data_na$TYPE_COLLECTION[Collection_data_na$TYPE_COLLECTION=="royal_coll"] <- "Royal"
+Collection_data_na$TYPE_COLLECTION[Collection_data_na$TYPE_COLLECTION=="not_mentioned"] <- "No Info"
+
+Collection_data_na$TYPE_COLLECTION = factor(Collection_data_na$TYPE_COLLECTION, levels = c("Belgium", "Museum", "Noble", "Private", "Royal", "No Info"))
+
+collection_anon = ggplot(Collection_data_a, aes(x=TYPE_COLLECTION, y=log(HAM_USD)))+geom_boxplot() + labs(title="Anonymous", x= "Collection Type", y ="Log(Hammer Price)")
+collection_non_anon = ggplot(Collection_data_na, aes(x=TYPE_COLLECTION, y=log(HAM_USD)))+geom_boxplot(fill="blue")+ labs(title="Non-Anonymous", x= "Collection Type", y ="Log(Hammer Price)")
+```
+```{r}
+grid.arrange(n_anon_sal, anon_sal, collection_non_anon, collection_anon, ncol=2, top = "Figure 8: Consistent Trends Seen in Sale Type and Collection Type")
+```
+
+These findings are all informative for our selection of variables in the model which is described in the next section.
+
+## Methodology
+
+In order to distill art valuations to the objective aspects of the art itself, we will create two models to compare: one model fit to the data only concerning anonymous paintings, and the other fit to the data only concercing paintings with some attribution. These models will (mostly) include the same independent variables so they can more easily be compared.
+
+### (Manipulated) Variables Included
+
+#### Shared by Both Models
+
+* The type of sale (day or evening) was included as, traditionally, compared to day sales, evening sales tend to [have fewer works being sold, and these pieces tend to sell at much higher price points](https://www.fineartassetadvisor.com/blog/art-amp-finance-newsletter-35-what-is-the-difference-between-daytime-amp-evening-art-auctions).
+
+* The associated surface area of the piece recorded in the sale is included because this characteristic is a purely objective fact of a work. Because this analysis is interested in objective factors that may be associated with the value of art, we will include this. Furthermore, previous [research](https://www.fineartassetadvisor.com/blog/art-amp-finance-newsletter-35-what-is-the-difference-between-daytime-amp-evening-art-auctions) shows evidence of the size of paintings having a positive relationship with price. We divided this variable by 500 to make for more interprettable results
+
+* The adjunct century of the piece. This dataset only includes 15th - 17th century work, but as this is an objective characteristic, it will be included. There were 2,854 missing values for this variable. Upon closer examination, all but 3 observations were associated with a school from the 16th-17th century. With this, an additional category was made to reflect this and another categpry to reflect "missing."
+
+* The associated artistic School which refers to a common [style, inspiration, training, or aims](https://www.thoughtco.com/difference-between-art-styles-schools-and-movements-2573812). This, again, is an objective quality of a piece.
+
+* The subject or topic of the piece in a sale and the year of the sale. The subject of a piece is objective and an important distinction to be made when comparing other pieces. The year of the sale is important in understanding the context of the purchase and the nature of the art economy at the time. Furthermore, as the [taste of art markets change](https://www.royalacademy.org.uk/event/courses-and-classes-a-history-of-the-art-market-an-evolution-of-taste-art-history-theory-business) the prices reflect changes in demand. Therefore, we will also include an interaction term with date purchased and subject to reflect the evolution of preference and trends in the art economy.
+
+* The currency used in the sale. Currency may indirectly link the buyer's culture or country of origin. We will include this variable to control for potential preference.
+
+* The collection type associated with the piece sold. Most of the sales do not include this information, but whether a piece was in a private collection (owned by a single entity), or in a museum collection (shown within a museum), etc, is an important factor to control for when understanding price.
+
+* The reputation of the auction house in the sale. This is to control for potential confounding factors driving hammer prices.
+
+* A binary variable that was created to indicate if there are publications on the painting or not. Having more information or recognition of a piece may be associated with its value.
+
+* A binary variable indicating if the painting was dated or not. Having more information about the exact time period of a piece may be associated with its price.
+
+* A variable indicating the material the painting was on and another variable for the medium of the painting (i.e. oil or tempera). These are material and objective characteristics of a piece and are relevant to look at when understanding the value of a piece independent of it's associated authorship status.
+
+* The Consumer Price Index (CPI) is included as it gives context to the state of the (U.S.) economy during the time of the sale. As the U.S. economy is closely intertwined with other developed countries, this proxy is considered adequate for reflecting economic trends during the time of the sale.
+
+* A binary variable indicating if the painting had been in an exhibit or not. Such indication may control for status of a piece and thus what a buyer is willing to bid.
+
+
+#### Unique to Model for Anonymous Paintings
+
+The attribute of "Anonymous" was created to account for pieces in which the artist's name was anonymous and there was no formal attribution given. This distinction was used when distinguishing between data that was associated with anonymous and non-anonymous work
+
+* A binary variable was created to determine if the piece had been reattributed--meaning the original was deemed inaccurate by a relevant expert. For anonymous art, this would mean that the piece had been attributed to an artist or group, and then later determined that such attribution was inaccurate and now it is deemed an "anonymous" work.
+
+### Unique to Model for Non-Anonymous Paintings
+
+For our model fit to non-anonymous data, we will include the attribution type. As mentioned previously, these attributions (naming mechanisms) are important distinctions when considering the valuation of art. For example, a paintings that is verified as "by" a particular artist is more informative for a buyer than "attributed to", "School of", etc., and thus, [the buyer is likely willing to pay more](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2471488). Pieces with the attribute "after" and "by & studio" were included in the "by" attribute since both can be associated with a specific artist.
+
+* Indication of the type of reattribution a painting may have had. A painting may have had no reattribution, or a negative reattribution meaning that the piece used to have a more profitable attribution than the one it bears for the sale, or a positive reattribution meaning that the piece used to have a less profitable attribution than the one it bears for the sale. The anonymous paintings do not have positive reattributions because being "anonymous" is regarded as the least profitable attribution.
+
+* Binary indication of whether a painting was examined via scientific technology for authentication purposes. Only 1 painting in the anonymous data was associated with this so for the sake of simplicity, it will only be included in the non-anonymous data.
+
+* Binary indication of whether a piece had a signature or not. This allows for greater authentication and information for a buyer, potential associated with the hammer price. Because anonymous works do not have a known author, this variable is unique to the non-anonymous model.
+
+## Results
+
+For this analysis two models are constructed. One fit to the data of non-anonymous work and the other fit to the data of anonymous work. Both will have the same response variable: ln(Hammer Price 2015 USD Equvalent). Given the skew of the the USD hammer price, this transformation was deemed appropriated to reduce variability.
+
+```{r}
+model_a_data = anon_data
+model_a_data$Prev_Attrib=as.factor(model_a_data$Prev_Attrib)
+model_a_data$EXHIB=as.factor(model_a_data$EXHIB)
+model_a_data$t = scale(model_a_data$t)
+model_a_data$PI_CPI_OK = (model_a_data$PI_CPI_OK-8.3)
+model_a_data$dim2 = (model_a_data$dim2/500)
+model_a_data$dim2 = (model_a_data$dim2-(mean(data$dim2)/500))
+
+
+model_na_data = non_anon_data
+model_na_data$EXHIB=as.factor(model_na_data$EXHIB)
+model_na_data$TYPE_REATTRIB=as.factor(model_na_data$TYPE_REATTRIB)
+model_na_data$t = (model_na_data$t-1946)
+model_na_data$TYPE_REATTRIB = relevel(model_na_data$TYPE_REATTRIB, ref = "not_reattributed")
+model_na_data$PI_CPI_OK = (model_na_data$PI_CPI_OK-8.3)
+model_na_data$dim2 = (model_na_data$dim2/500)
+model_na_data$dim2 = (model_na_data$dim2-(mean(data$dim2)/500))
+
+full_model_anon = lm(data= model_a_data, Log_Hammer ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + Prev_Attrib + EXHIB)
+
+full_model_non_anon = lm(data= model_na_data, Log_Hammer ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + PI_ATTRIB + Scientific_Investig + SIG+ EXHIB + TYPE_REATTRIB)
+```
+
+```{r}
+#releveling
+#Antwerpen School because has the most observations
+#15th century because it is the earliest
+#Religious Topic because has the most observations
+#Great Britain Pound because has the most observations
+#Not mentioned has the level for collection type as it has the most observations and it has the lowest distribution in price
+#The most top tier auction house as it has the most observations and can compare from top organizations
+#Oil medium as it has the most observations and, during the 15-17th century, most work was done in oil.
+#Panel as material as it has the most observations
+
+```
+```{r}
+
+final_model_a = tidy(full_model_anon) %>% 
+  dplyr::select(-statistic) %>%
+  mutate(`Confidence (2.5%)` = exp(as.numeric(estimate) - ((1.96)*as.numeric(std.error))),
+         `Confidence (97.5%)` = exp(estimate + ((1.96)*std.error)),
+          Significant = ifelse(p.value < 0.05, "Yes", "No"),
+         `P-Value` = ifelse(p.value<0.001, "<0.001", paste("","",format(round(p.value,3), nsmall = 3), sep="&nbsp;" ))) %>%
+  dplyr::select(-std.error, -p.value) %>%
+  mutate(estimate = exp(as.numeric(estimate))) %>%
+  rename("Variable" = term,
+         "Coefficient" = estimate) %>% #Not sure about the name here
+  relocate(Variable,'Coefficient',`Confidence (2.5%)`,`Confidence (97.5%)`,`P-Value`) %>%
+  mutate(Variable = case_when(
+    Variable == "(Intercept)" ~ "Intercept",
+    Variable == "Sales_typeevening_sale" ~ "Evening Sale (vs. Day)",
+    Variable == "dim2" ~ "Surface Area of Painting",
+    Variable == "adj_century15th-16th c." ~ "15th-16th century (vs. 15th)",
+    Variable == "adj_century16th c." ~ "16th century (vs. 15th)",
+    Variable == "adj_century16th-17th c." ~ "16th-17th century (vs. 15th)",
+    Variable == "adj_centuryn. m." ~ "Century not mentioned (vs. 15th)",
+    Variable == "BY_SCHOOLBruges" ~ "Bruges School (vs. Antwerpen)",
+    Variable == "BY_SCHOOLBruxelles" ~ "Bruxelles School (vs. Antwerpen)",
+    Variable == "BY_SCHOOLFlemish" ~ "Flemish School (vs. Antwerpen)",
+    Variable == "BY_SCHOOLGhent" ~ "Ghent School (vs. Antwerpen)",
+    Variable == "BY_SCHOOLLeuven" ~ "Leuven School (vs. Antwerpen)",
+    Variable == "BY_SCHOOLNetherlandish" ~ "Netherlandish School (vs. Antwerpen)",
+    Variable == "PI_TOPICportrait" ~ "Portrait (vs. Religious topic)",
+    Variable == "PI_TOPIClandscape" ~ "Landscape (vs. Religious topic)",
+    Variable == "PI_TOPICallegory" ~ "Allegory (vs. Religious topic)",
+    Variable == "PI_TOPICgenre scene" ~ "Genre Scene (vs. Religious topic)",
+    Variable == "PI_TOPICmythology" ~ "Mythology (vs. Religious topic)",
+    Variable == "PI_TOPICstill life" ~ "Still Life (vs. Religious topic)",
+    Variable == "PI_TOPICothers" ~ "Other Topic (vs. Religious topic)",
+    Variable == "CURRATS" ~ "Purchased in Schillings (vs. British Pound)",
+    Variable == "CURRAUD" ~ "Purchased in Austrian Dollars (vs. British Pound)",
+    Variable == "CURRBEF" ~ "Purchased in Belgian Francs (vs. British Pound)",
+    Variable == "CURRCAD" ~ "Purchased in Canadian Dollars (vs. British Pound)",
+    Variable == "CURRCHF" ~ "Purchased in Swiss Francs (vs. British Pound)",
+    Variable == "CURRCZK" ~ "Purchased in Czech Koruna (vs. British Pound)",
+    Variable == "CURRDEM" ~ "Purchased in Deutsche Mark (vs. British Pound)",
+    Variable == "CURRDKK" ~ "Purchased in Danish Krone (vs. British Pound)",
+    Variable == "CURRESP" ~ "Purchased in Spanish Peseta (vs. British Pound)",
+    Variable == "CURREUR" ~ "Purchased in Euro (vs. British Pound)",
+    Variable == "CURRFIM" ~ "Purchased in Finnish Markka (vs. British Pound)",
+    Variable == "CURRFRF" ~ "Purchased in French Franc (vs. British Pound)",
+    Variable == "CURRHUF" ~ "Purchased in Hungarian Forint (vs. British Pound)",
+    Variable == "CURRIEP" ~ "Purchased in Irish Pound (vs. British Pound)",
+    Variable == "CURRITL" ~ "Purchased in Italian Lira (vs. British Pound)",
+    Variable == "CURRNLG" ~ "Purchased in Dutch Guilder (vs. British Pound)",
+    Variable == "CURRNZD" ~ "Purchased in New Zealand Dollar (vs. British Pound)",
+    Variable == "CURRPLN" ~ "Purchased in Polish Zloty (vs. British Pound)",
+    Variable == "CURRSEK" ~ "Purchased in Swedish Krona (vs. British Pound)",
+    Variable == "CURRUSD" ~ "Purchased in US Dollars (vs. British Pound)",
+    Variable == "CURRZAR" ~ "Purchased in S. African Rand (vs. British Pound)",
+    Variable == "TYPE_COLLECTIONBelgium_coll" ~ "Belgium Collection (vs. Not Specified)",
+    Variable == "TYPE_COLLECTIONmuseum_coll" ~ "Museum Collection (vs. Not Specified)",
+    Variable == "TYPE_COLLECTIONnoble_coll" ~ "Noble Collection (vs. Not Specified)",
+    Variable == "TYPE_COLLECTIONprivate_coll" ~ "Private Collection (vs. Not Specified)",
+    Variable == "TYPE_COLLECTIONroyal_coll" ~ "Royal Collection (vs. Not Specified)",
+    Variable == "t" ~ "Year Sold",
+    Variable == "AH_TYPESBETA" ~ "2nd Tier Auction House (vs. Top Tier)",
+    Variable == "AH_TYPESDELTA" ~ "3rd Tier Auction House (vs. Top Tier)",
+    Variable == "AH_TYPESGAMMA" ~ "4th Tier Auction House (vs. Top Tier)",
+    Variable == "Literature1" ~ "Publications on Painting (vs. None)",
+    Variable == "DAT1" ~ "Date on Painting (vs. None)",
+    Variable == "PI_TECHothers" ~ "Other Medium (vs. Oil)",
+    Variable == "PI_TECHtempera" ~ "Tempera Medium (vs. Oil)",
+    Variable == "PI_MATcanvas" ~ "Canvas Material (vs. Panel)",
+    Variable == "PI_MATcopper" ~ "Copper Material (vs. Panel)",
+    Variable == "PI_MATothers" ~ "Other Material (vs. Panel)",
+    Variable == "PI_CPI_OK" ~ "CPI at time of sale",
+    Variable == "Prev_Attrib1" ~ "Had Previous Attribute (vs. Didn't)",
+    Variable == "PI_TOPICportrait:t" ~ "Portrait * Year sold",
+    Variable == "PI_TOPIClandscape:t" ~ "Landscape * Year sold",
+    Variable == "PI_TOPICallegory:t" ~ "Allegory * Year sold",
+    Variable == "PI_TOPICgenre scene:t" ~ "Genre Scene * Year sold",
+    Variable == "PI_TOPICmythology:t" ~ "Mythology * Year sold",
+    Variable == "PI_TOPICstill life:t" ~ "Still Life * Year sold",
+    Variable == "PI_TOPICothers:t" ~ "Other Topic * Year sold",
+    Variable == "EXHIB1" ~ "Been in an Exhibit (vs. not)",
+
+    ))
+```
+
+```{r}
+final_model_a[c(1:12, 21:62), ]  %>%
+  kable(format = "markdown", digits=3, caption ="Anonymous Model")
+  
+```
+The baseline for this model is interpreted as follows:
+
+An evening sale; The dataset's average painting surface area of 4945 sqr cm; 15th century painting; Antwerpen School; Paid for with British Pounds; Collection type not specified; Sold in the first year recorded in the dataset (1946); Of a religious topic; Sold at a top tier auction house; No publications on the painting; No date on the painting; Painted in oil on a panel; CPI at time of sale was 8.3 (recorded for 1946); Was not Reattributed; And has not been in an exhibit.
+
+We will consider the median hammer price in our interpretations rather than the mean as unconventionally high hammer prices caused by extreme bidding distort the average. Note that "accounting for all other factors" in the followinf interpretations refers to the baseline metrics. From the model, some interesting interpretations are:
+
+* As expected, the median hammer price for an evening sale vs. a day sale is expected to multiply by a factor of 5.534, after accounting for all other factors.
+
+* For every additional 500 sqr cm (just over 0.5 sqr ft) the median hammer price is expected to multiply by a factor of 1.014, after accounting for all other factors.
+
+* The median hammer price for a purchase in USD vs. Pounds is expected to multiply by a factor of 1.259, after accounting for all other factors.
+
+* The median hammer price for a purchase from a private collected vs. an unspecified collectiom is expected to multiply by a factor of 1.485, after accounting for all other factors.
+
+* The median hammer price for an auction not at top tier auction houses is expected to be less than at a top tier, after accounting for all other factors.
+
+* The median hammer price for a painting with publications on the work is expected to multiply by a factor of 1.690 compared to no publications, after accounting for all other factors.
+
+* For each additional year above 1946, the median hammer price for a sale is expected to multiply by a factor of 2.450, after accounting for all other factors.
+
+* For each additional year above 1946, the median hammer price for a mythology vs. a religious topic painting is expected to multiply by a factor of 1.278	, after accounting for all other factors.
+
+```{r}
+#plot(full_model_anon)
+```
+
+
+```{r}
+final_model_non_a = tidy(full_model_non_anon) %>% 
+  dplyr::select(-statistic) %>%
+  mutate(`Confidence (2.5%)` = exp(as.numeric(estimate) - ((1.96)*as.numeric(std.error))),
+         `Confidence (97.5%)` = exp(estimate + ((1.96)*std.error)),
+          Significant = ifelse(p.value < 0.05, "Yes", "No"),
+         `P-Value` = ifelse(p.value<0.001, "<0.001", paste("","",format(round(p.value,3), nsmall = 3), sep="&nbsp;" ))) %>%
+  dplyr::select(-std.error, -p.value) %>%
+  mutate(estimate = exp(as.numeric(estimate))) %>%
+  rename("Variable" = term,
+         "Coefficient" = estimate) %>% #Not sure about the name here
+  relocate(Variable,'Coefficient',`Confidence (2.5%)`,`Confidence (97.5%)`,`P-Value`) %>%
+  mutate(Variable = case_when(
+    Variable == "(Intercept)" ~ "Intercept",
+    Variable == "Sales_typeevening_sale" ~ "Evening Sale (vs. Day)",
+    Variable == "dim2" ~ "Surface Area of Painting",
+    Variable == "adj_century15th-16th c." ~ "15th-16th century (vs. 15th)",
+    Variable == "adj_century16th c." ~ "16th century (vs. 15th)",
+    Variable == "adj_century16th-17th c." ~ "16th-17th century (vs. 15th)",
+    Variable == "BY_SCHOOLBelgian" ~ "Beglian School (vs. Antwerpen)",
+    Variable == "BY_SCHOOLBruges" ~ "Bruges School (vs. Antwerpen)",
+    Variable == "BY_SCHOOLBruxelles" ~ "Bruxelles School (vs. Antwerpen)",
+    Variable == "BY_SCHOOLFlemish" ~ "Flemish School (vs. Antwerpen)",
+    Variable == "BY_SCHOOLGhent" ~ "Ghent School (vs. Antwerpen)",
+    Variable == "BY_SCHOOLLeuven" ~ "Leuven School (vs. Antwerpen)",
+    Variable == "BY_SCHOOLNetherlandish" ~ "Netherlandish School (vs. Antwerpen)",
+    Variable == "PI_TOPICportrait" ~ "Portrait (vs. Religious topic)",
+    Variable == "PI_TOPIClandscape" ~ "Landscape (vs. Religious topic)",
+    Variable == "PI_TOPICallegory" ~ "Allegory (vs. Religious topic)",
+    Variable == "PI_TOPICgenre scene" ~ "Genre Scene (vs. Religious topic)",
+    Variable == "PI_TOPICmythology" ~ "Mythology (vs. Religious topic)",
+    Variable == "PI_TOPICstill life" ~ "Still Life (vs. Religious topic)",
+    Variable == "PI_TOPICothers" ~ "Other Topic (vs. Religious topic)",
+    Variable == "CURRATS" ~ "Purchased in Schillings (vs. British Pound)",
+    Variable == "CURRAUD" ~ "Purchased in Austrian Dollars (vs. British Pound)",
+    Variable == "CURRBEF" ~ "Purchased in Belgian Francs (vs. British Pound)",
+    Variable == "CURRCAD" ~ "Purchased in Canadian Dollars (vs. British Pound)",
+    Variable == "CURRCHF" ~ "Purchased in Swiss Francs (vs. British Pound)",
+    Variable == "CURRCZK" ~ "Purchased in Czech Koruna (vs. British Pound)",
+    Variable == "CURRDEM" ~ "Purchased in Deutsche Mark (vs. British Pound)",
+    Variable == "CURRDKK" ~ "Purchased in Danish Krone (vs. British Pound)",
+    Variable == "CURRESP" ~ "Purchased in Spanish Peseta (vs. British Pound)",
+    Variable == "CURREUR" ~ "Purchased in Euro (vs. British Pound)",
+    Variable == "CURRFIM" ~ "Purchased in Finnish Markka (vs. British Pound)",
+    Variable == "CURRFRF" ~ "Purchased in French Franc (vs. British Pound)",
+    Variable == "CURRHUF" ~ "Purchased in Hungarian Forint (vs. British Pound)",
+    Variable == "CURRIEP" ~ "Purchased in Irish Pound (vs. British Pound)",
+    Variable == "CURRITL" ~ "Purchased in Italian Lira (vs. British Pound)",
+    Variable == "CURRNLG" ~ "Purchased in Dutch Guilder (vs. British Pound)",
+    Variable == "CURRNZD" ~ "Purchased in New Zealand Dollar (vs. British Pound)",
+    Variable == "CURRPLN" ~ "Purchased in Polish Zloty (vs. British Pound)",
+    Variable == "CURRSEK" ~ "Purchased in Swedish Krona (vs. British Pound)",
+    Variable == "CURRUSD" ~ "Purchased in US Dollars (vs. British Pound)",
+    Variable == "CURRZAR" ~ "Purchased in S. African Rand (vs. British Pound)",
+    Variable == "TYPE_COLLECTIONBelgium_coll" ~ "Belgium Collection (vs. Not Specified)",
+    Variable == "TYPE_COLLECTIONmuseum_coll" ~ "Museum Collection (vs. Not Specified)",
+    Variable == "TYPE_COLLECTIONnoble_coll" ~ "Noble Collection (vs. Not Specified)",
+    Variable == "TYPE_COLLECTIONprivate_coll" ~ "Private Collection (vs. Not Specified)",
+    Variable == "TYPE_COLLECTIONroyal_coll" ~ "Royal Collection (vs. Not Specified)",
+    Variable == "t" ~ "Year Sold",
+    Variable == "AH_TYPESBETA" ~ "2nd Tier Auction House (vs. Top Tier)",
+    Variable == "AH_TYPESDELTA" ~ "3rd Tier Auction House (vs. Top Tier)",
+    Variable == "AH_TYPESGAMMA" ~ "4th Tier Auction House (vs. Top Tier)",
+    Variable == "Literature1" ~ "Publications on Painting (vs. None)",
+    Variable == "DAT1" ~ "Date on Painting (vs. None)",
+    Variable == "PI_TECHothers" ~ "Other Medium (vs. Oil)",
+    Variable == "PI_TECHtempera" ~ "Tempera Medium (vs. Oil)",
+    Variable == "PI_MATcanvas" ~ "Canvas Material (vs. Panel)",
+    Variable == "PI_MATcopper" ~ "Copper Material (vs. Panel)",
+    Variable == "PI_MATothers" ~ "Other Material (vs. Panel)",
+    Variable == "PI_CPI_OK" ~ "CPI at time of sale",
+    Variable == "PI_ATTRIBattributed to" ~ "Atttributed to (vs. By)",
+    Variable == "PI_ATTRIBcircle of" ~ "Circle of (vs. By)",
+    Variable == "PI_ATTRIBfollower of" ~ "Follower of (vs. By)",
+    Variable == "PI_ATTRIBmanner of" ~ "Manner of (vs. By)",
+    Variable == "PI_ATTRIBschool of" ~ "School of (vs. By)",
+    Variable == "PI_ATTRIBstyle of" ~ "Style of (vs. By)",
+    Variable == "PI_ATTRIBstudio of" ~ "Studio of (vs. By)",
+    Variable == "Scientific_Investig1" ~ "Examined via Scientific Tech. (vs. Not)",
+    Variable == "SIG1" ~ "Signed (vs. Not)",
+    Variable == "PI_TOPICportrait:t" ~ "Portrait * Year sold",
+    Variable == "PI_TOPIClandscape:t" ~ "Landscape * Year sold",
+    Variable == "PI_TOPICallegory:t" ~ "Allegory * Year sold",
+    Variable == "PI_TOPICgenre scene:t" ~ "Genre Scene * Year sold",
+    Variable == "PI_TOPICmythology:t" ~ "Mythology * Year sold",
+    Variable == "PI_TOPICstill life:t" ~ "Still Life * Year sold",
+    Variable == "PI_TOPICothers:t" ~ "Other Topic * Year sold",
+    Variable == "EXHIB1" ~ "Been in an Exhibit (vs. not)",
+    Variable == "TYPE_REATTRIBnegative_reattrib" ~ "Reattrubted to a Less Profitable Attrib. (vs. not)",
+    Variable == "TYPE_REATTRIBpositive_reattrib" ~ "Reattrubted to a More Profitable Attrib. (vs. not)",
+    ))
+```
+
+```{r}
+final_model_non_a[c(1:14, 21:76),]  %>%
+  kable(format = "markdown", digits=3, caption ="Non-Anonymous Model")
+  
+```
+
+The baseline for this model is interpreted as follows:
+An evening sale; The dataset's average painting surface area of 4945 sqr cm; 15th century painting; Antwerpen School; Paid for with British Pounds; Collection type not specified; Sold in the first year recorded in the dataset (1946); Of a religious topic; Sold at a top tier auction house; No publications on the painting; No date on the painting; Painted in oil on a panel; CPI at time of sale was 8.3 (recorded for 1946); Was not Reattributed; Has not been in an exhibit; Was not examined via scientific technology; Was not signed.
+
+We will consider the median hammer price in our interpretations rather than the mean as unconventionally high hammer prices caused by extreme bidding distort the average. Note that "accounting for all other factors" in the following interpretations refers to the baseline metrics. From the model, some interesting interpretations are:
+
+* Similar to the anonymous work, the median hammer price for an evening sale vs. a day sale is expected to multiply by a factor of greater than 1, after accounting for all other factors.
+
+* For every additional 500 sqr cm (just over 0.5 sqr ft) the median hammer price is expected to multiply by a factor of 1.014, after accounting for all other factors.
+
+* As expected, the median hammer price for attributions considered less prestigious as "by" are all expected to multiply by a factor of less than, after accounting for all other factors.
+
+* The median hammer price for pieces that have been in an exhibit vs. have not is expected to multiply by a factor of 1.738	, after accounting for all other factors.
+
+* Similar to the anonymous work, the median hammer price for an dated painting vs. not dated is expected to multiply by a factor of greater than 1, after accounting for all other factors.
+
+* For each additional year above 1946, the median hammer price for a sale is expected to multiply by a factor of 1.071, after accounting for all other factors.
+
+* For each additional year above 1946, the median hammer price for a landscape vs. a religious topic painting is expected to multiply by a factor of 0.988, after accounting for all other factors.
+
+# Discussion
+
+As seen in our interpreted results, the two fitted model for anonymous and non-anonymous works had both similar and dissimilar associations with hammer price and independent variables after adjusting for baseline metrics. As our focus was mainly concerning with objective factors that are associated with the "value" (in this context measured by hammer price) of art, we will focus on the model fit to the anonymous sales and then look at the non-anonymous model for interesting comparisons. Objective factors like surface area, century made, School, material, and subject/topic of the painting were all deemed significant in the model. Analyzing anonymous art sakes serves as a way to distill artwork (in this case Flemish paintings from the 15th-17th century) down to the pure qualities that are associated with it's value. Ultimately, understanding art outside of the context of it's creator can strip it to a more intrinsic value.
+
+Some limitations to this analysis rest in the asymmetry of accessible data for anonymous vs. non-anonymous work. There wa substantially more data for non-anonymous pieces. Another limitation is that there is no evidence to believe that findings for these paintings (Flemish Old Master from 15th - 17th century) can be extrapolated to other genres. 
+
+With a significant lack of accessibility and transparency in auction houses and art markets, there remains an extensive amount of meaningful research to be done, especially in the area of anonynmous work. Rademecker's research and data provides a robust example of the type of insights that can be gained from such analases. 
+
+

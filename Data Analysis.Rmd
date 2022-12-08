@@ -1,8 +1,7 @@
 ---
-title: "Data Analysis Report"
+title: "Artsy.net/Rademecker Data Analysis Report (Done in R)"
 output: pdf_document
 urlcolor: blue
-date: '2022-10-04'
 ---
 
 ```{r, include=FALSE}

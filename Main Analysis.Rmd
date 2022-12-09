@@ -161,9 +161,8 @@ hammer_price_non_log = ggplot(data = non_anon_data, aes(x=log(HAM_USD)))+geom_hi
 hammer_price_anon_log = ggplot(data = anon_data, aes(x=log(HAM_USD)))+geom_histogram() + labs(title= "Log Transformed", x= "Log(Hammer Price (2015 USD Equivalent))", y = "Count")
 ```
 
-```{r, fig.height=3.5}
-grid.arrange(hammer_price_non, hammer_price_anon,hammer_price_non_log, hammer_price_anon_log, ncol= 2, top = "Figure 1: Comparison of Hammer Price Distribution Between 
-Non-Anonymous and Anonymous Paintings (with Log Transformations)")
+```{r, fig.height=3}
+grid.arrange(hammer_price_non, hammer_price_anon,hammer_price_non_log, hammer_price_anon_log, ncol= 2, top = "Figure 1: Comparison of Hammer Price Distributions")
 
 ```
 
@@ -327,15 +326,15 @@ full_model_non_anon = lm(data= model_na_data, Log_Hammer ~ Sales_type + dim2 + a
 ```{r}
 final_model_a = tidy(full_model_anon) %>% 
   dplyr::select(-statistic) %>%
-  mutate(`Confidence (2.5%)` = exp(as.numeric(estimate) - ((1.96)*as.numeric(std.error))),
-         `Confidence (97.5%)` = exp(estimate + ((1.96)*std.error)),
-          Significant = ifelse(p.value < 0.05, "Yes", "No"),
+  mutate(`95% CI Lower Bound` = exp(as.numeric(estimate) - ((1.96)*as.numeric(std.error))),
+         `95% CI Upper Bound` = exp(estimate + ((1.96)*std.error)),
+          Sig = ifelse(p.value < 0.05, "Yes", "No"),
          `P-Value` = ifelse(p.value<0.001, "<0.001", paste("","",format(round(p.value,3), nsmall = 3), sep="&nbsp;" ))) %>%
   dplyr::select(-std.error, -p.value) %>%
   mutate(estimate = exp(as.numeric(estimate))) %>%
   rename("Variable" = term,
-         "Coefficient" = estimate) %>% #Not sure about the name here
-  relocate(Variable,'Coefficient',`Confidence (2.5%)`,`Confidence (97.5%)`,`P-Value`) %>%
+         "Coeff" = estimate) %>% #Not sure about the name here
+  relocate(Variable,'Coeff',`95% CI Lower Bound`,`95% CI Upper Bound`,`P-Value`) %>%
   mutate(Variable = case_when(
     Variable == "(Intercept)" ~ "Intercept",
     Variable == "Sales_typeevening_sale" ~ "Evening Sale (vs. Day)",
@@ -408,7 +407,6 @@ final_model_a = tidy(full_model_anon) %>%
 ```
 
 
-
 ```{r}
 final_model_a[c(1:3, 6,10, 15,18, 29,36,38,40, 42,43, 44, 46, 47, 49,50, 51, 54, 55, 57,60), ]  %>%
   kable(format = "markdown", digits=3, caption ="Anonymous Model")
@@ -431,15 +429,15 @@ final_model_a[c(1:3, 6,10, 15,18, 29,36,38,40, 42,43, 44, 46, 47, 49,50, 51, 54,
 ```{r}
 final_model_non_a = tidy(full_model_non_anon) %>% 
   dplyr::select(-statistic) %>%
-  mutate(`Confidence (2.5%)` = exp(as.numeric(estimate) - ((1.96)*as.numeric(std.error))),
-         `Confidence (97.5%)` = exp(estimate + ((1.96)*std.error)),
-          Significant = ifelse(p.value < 0.05, "Yes", "No"),
+  mutate(`95% CI Lower Bound` = exp(as.numeric(estimate) - ((1.96)*as.numeric(std.error))),
+         `95% CI Upper Bound` = exp(estimate + ((1.96)*std.error)),
+          Sig = ifelse(p.value < 0.05, "Yes", "No"),
          `P-Value` = ifelse(p.value<0.001, "<0.001", paste("","",format(round(p.value,3), nsmall = 3), sep="&nbsp;" ))) %>%
   dplyr::select(-std.error, -p.value) %>%
   mutate(estimate = exp(as.numeric(estimate))) %>%
   rename("Variable" = term,
-         "Coefficient" = estimate) %>% #Not sure about the name here
-  relocate(Variable,'Coefficient',`Confidence (2.5%)`,`Confidence (97.5%)`,`P-Value`) %>%
+         "Coeff." = estimate) %>% #Not sure about the name here
+  relocate(Variable,'Coeff.',`95% CI Lower Bound`,`95% CI Lower Bound`,`P-Value`) %>%
   mutate(Variable = case_when(
     Variable == "(Intercept)" ~ "Intercept",
     Variable == "Sales_typeevening_sale" ~ "Evening Sale (vs. Day)",
@@ -575,6 +573,7 @@ grid.arrange(collection_non_anon, collection_anon,n_anon_sal, anon_sal,  ncol=2,
 ```
 
 ## Removed Variables
+Firstly, variables removed from this analysis were redundant variables with different formatting or variable type (i.e. binary vs. categorical). Additionally, information about the class of "old Masters" (a name for a individual or type/school of art) was not used in this analysis. While Rademecker's research was focused on associations between different Old Masters paintings, this analysis was more concerned with the distinction of purely anonymous versus formally attributed paintings. Lastly, variables that contained more specific details about a given auction were not used as it was believed that this could be adequatelt captured in the ordinal ranking ("tier") of the auction house.
 
 ## Model Assumptions
 The assumptions for this model are as follows:
@@ -652,3 +651,15 @@ An evening sale; The dataset's average painting surface area of 4,956 sqr cm; 15
 
 ## Baseline for Non-Anonymous Model 
 An evening sale; The dataset's average painting surface area of 4956 sqr cm; 15th century painting; Antwerpen School; Paid for with British Pounds; Collection type not specified; Sold in the first year recorded in the dataset (1946); Of a religious topic; Sold at a top tier auction house; No publications on the painting; No date on the painting; Painted in oil on a panel; CPI at time of sale was 8.3 (recorded for 1946); Was not Reattributed; Has not been in an exhibit; Was not examined via scientific technology; Was not signed.
+
+## Full Anonymous Model 
+```{r}
+final_model_a %>%
+  kable(format = "markdown", digits=3, caption ="Non-Anonymous Model")
+```
+
+## Full Non-Anonymous Model 
+```{r}
+final_model_non_a %>%
+  kable(format = "markdown", digits=3, caption ="Non-Anonymous Model")
+```

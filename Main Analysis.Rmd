@@ -1,8 +1,13 @@
 ---
-title: "Main Analysis"
 output: pdf_document
 urlcolor: blue
 ---
+# Understanding & Quantifying How Paintings are "Valued"
+\vspace{-0.4cm}
+\begin{center}
+\emph{Jessie Bierschenk}
+\end{center}
+\vspace{-0.6cm}
 
 ```{r, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.align = 'center', out.extra = '', message = FALSE, warning= FALSE)
@@ -45,7 +50,7 @@ data$HAM_USD = as.numeric(data$HAM_USD)
 
 The analyzation of paintings has appeared across various conversations in art, politics, history, and economics, but a question still exists: How do we put a price (as a proxy for value) on such a personal and arbitrary good? Business professionals might say that [appraisals are based largely on what the art has already sold for or typically sells](https://www.artbusiness.com/appsellart.html#:~:text=A%20realistic%20appraised%20value%20is%20based%20largely%20on%20what%20the,that%20have%20already%20taken%20place.); art historians might say that [value is determined by its cultural significance within a given time period.](https://arthistoryproject.com/essays/the-value-of-art/) Yet the question still remains of what objective qualities inherent to a work add value? In the hopes of further exploring such question, this analysis focuses on art auction sales and, by using anonymous works, attempts to strip paintings of their intangible ties to fame or reputation in order to isolate and identify the objective qualities that are associated with art prices. 
 
-[Previous research](https://ideas.repec.org/p/sol/wpaper/2013-264567.html) has identified evidence of a strong assocation between formal naming conventions used by art historians and final auction prices (known as hammer prices). Today, artists are easily identifiable as it has become common practice to sign artwork. In the past (1350-1850), close attention was typically paid to the provisional name of the creator and its long-term recognition, typology, etc. Art markets are characterized by strong asymmetry of information and high uncertainty surrounding quality, leading to difficulty in accurate pricing and therefore emphasizing the importance of the reputation of the creator. To circumvent this reliance on reputation, this analysis will focus on sales of anonymous paintings in an adaption of a dataset from [Anne-Sophie Radermecker's work on naming conventions and anonymous art](https://ideas.repec.org/p/sol/wpaper/2013-264567.html) My primary research question is as follows:
+[Previous research](https://ideas.repec.org/p/sol/wpaper/2013-264567.html) has identified evidence of a strong assocation between formal naming conventions used by art historians and final auction prices (known as hammer prices). Today, artists are easily identifiable as it has become common practice to sign artwork. In the past (1350-1850), close attention was typically paid to the provisional name of the creator and its long-term recognition, typology, etc. Art markets are characterized by strong asymmetry of information and high uncertainty surrounding quality, leading to difficulty in accurate pricing and therefore emphasizing the importance of the reputation of the creator. To circumvent this reliance on reputation, this analysis will focus on sales of anonymous paintings in an adaption of a dataset from [Anne-Sophie Radermecker's work on naming conventions and anonymous art.](https://ideas.repec.org/p/sol/wpaper/2013-264567.html) The analysis aims to present findings that are easily interpretable for players in the art markets not familiar with highly complex statistical method. The primary research question is as follows:
 
 **(1) What objective, indesputable qualities of a painting are associated with it's value (price) when the connection to its creator is not applicable or controlled for?**
 
@@ -96,6 +101,10 @@ style_total_per = length(which(data$PI_ATTRIB == "style of"))/length(data$PI_ATT
 tab_freq_attrib = matrix(c(anon_total, after_total, attrib_total, by_total, circle_total, follower_total, school_total, studio_total,style_total,total_attrib, percent(anon_total_per, accuracy = 0.1),  percent(after_total_per, accuracy = 0.1), percent(attrib_total_per, accuracy = 0.1), percent(by_total_per, accuracy = 0.1), percent(circle_total_per, accuracy = 0.1), percent(follower_total_per, accuracy = 0.1), percent(school_total_per, accuracy = 0.1), percent(studio_total_per, accuracy = 0.1),percent(style_total_per, accuracy = 0.1), "100%"), ncol=10, byrow = TRUE)
 colnames(tab_freq_attrib)= c( "Anonymous", "After", "Attributed to", "By", "Circle of", "Follower of", "School of", "Studio of", "Style of", "Total")
 rownames(tab_freq_attrib)=c("Count", "Percent")
+
+```
+
+```{r}
 tab_freq_attrib %>% 
   kbl(align = rep("c", 4), caption = "Frequency of Attributes in Data") %>%
   kable_styling(latex_options= c("striped","scale_down"))
@@ -137,9 +146,9 @@ non_anon_data = subset(data, PI_NAME != "ANONYMOUS_MASTERS")
 
 ```
 
-Our response variable of interest is the median hammer price in 2015 US dollars. As shown in Figure 4, both anonymous and non-anonymous paintings had a relatively similar shape of price distributions with significant right skew. For non-anonymous paintings, the minimum hammer price in 2015 US dollar equivalent was \$105 and the maximum was \$10,423,009; the median hammer price was \$10,589. For anonymous paintings, the minimum hammer price in 2015 US dollar equivalent was \$263 (higher than non-anonymous) and the maximum was \$2,200,000 (significantly lower than non-anonymous); the median hammer price was \$9,420 ( >\$1,000 less than non-anonymous). This general trend is as expected as the price of anonymous art is not driven up by any particular artist/attribution the way that non-anonymous art is. For both categories, most hammer prices lie in the \$10k - \$50k range.
+Our response variable of interest is the median hammer price in 2015 US dollars. As shown in **Figure 1**, both anonymous and non-anonymous paintings had a relatively similar shape of price distributions with significant right skew. For non-anonymous paintings, the minimum hammer price in 2015 US dollar equivalent was \$105 and the maximum was \$10,423,009; the median hammer price was \$10,589. For anonymous paintings, the minimum hammer price in 2015 US dollar equivalent was \$263 (higher than non-anonymous) and the maximum was \$2,200,000 (significantly lower than non-anonymous); the median hammer price was \$9,420 ( >\$1,000 less than non-anonymous). This general trend is as expected as the price of anonymous art is not driven up by any particular artist/attribution the way that non-anonymous art is. For both categories, most hammer prices lie in the \$10k - \$50k range.
 
-Figure 4 shows the log-transformations of the hammer price distribution. Because these distribution are orginally right skewed, a log transformation can reduce skewness in the response and the response more closely reflects a normal distribution shape.
+**Figure 1** shows the log-transformations of the hammer price distribution. Because these distribution are orginally right skewed, a log transformation can reduce skewness in the response and the response more closely reflects a normal distribution shape.
 
 ```{r}
 hammer_price_non = ggplot(data = non_anon_data, aes(x=HAM_USD))+geom_histogram(fill="blue")+xlim(0,1000000)+ylim(0,3000) + labs(title= "Non-Anonymous Paintings", x= "Hammer Price (2015 USD Equivalent)", y = "Count")
@@ -150,39 +159,35 @@ hammer_price_anon_log = ggplot(data = anon_data, aes(x=log(HAM_USD)))+geom_histo
 ```
 
 ```{r, fig.height=3.5}
-grid.arrange(hammer_price_non, hammer_price_anon,hammer_price_non_log, hammer_price_anon_log, ncol= 2, top = "Figure 4: Comparison of Hammer Price Distribution Between 
+grid.arrange(hammer_price_non, hammer_price_anon,hammer_price_non_log, hammer_price_anon_log, ncol= 2, top = "Figure 1: Comparison of Hammer Price Distribution Between 
 Non-Anonymous and Anonymous Paintings (with Log Transformations)")
 
 ```
 
-As discussed previously, research has presented evidence of differences in hammer prices based on attribution status.  shown below, log(hammer price) distributions differ by associated attribution for paintings. The log transformed version is shown to more easily visualize distributions. Paintings that are replications or "copies" of original work appear to have the lowest interquartile range. It's interesting to note that even anonymous paintings have a higher interquartile range than paintings known to not be original. The hammer price distribution associated with by has the largest range; this is likely because the direct link to a particular artist is likely also a direct link to the clout of a particular artist which may significantly vary on a case-by-case basis.
+As discussed previously, research has presented evidence of differences in hammer prices based on attribution status. In **Figure 2** log(hammer price) distributions differ by associated attribution for paintings. The log transformed version is shown to more easily visualize distributions. Paintings that are replications or "copies" of original work appear to have the lowest interquartile range. It's interesting to note that even anonymous paintings have a higher interquartile range than paintings known to not be original. The hammer price distribution associated with by has the largest range; this is likely because the direct link to a particular artist is likely also a direct link to the clout of a particular artist which may significantly vary on a case-by-case basis.
 
-```{r fig.height=3, fig.width= 6}
+```{r fig.height=2.5, fig.width= 6}
 data=data %>% 
   mutate(Anonymous = ifelse(PI_NAME == "ANONYMOUS_MASTERS", 1, 0))
 data$PI_ATTRIB = ordered(data$PI_ATTRIB, levels=c("by", "follower of", "studio of", "manner of", "attributed to", "style of","circle of","school of", "after", "Anonymous"))
-attrib_price = ggplot(data)+ geom_boxplot(aes(y= PI_ATTRIB,x= log(HAM_USD), fill = as.factor(Anonymous)))+ labs(title = "Log(Hammer Price) Distribution by Attribution", x = "Log(Hammer Price)", y = "Attribution Type")
+attrib_price = ggplot(data)+ geom_boxplot(aes(y= PI_ATTRIB,x= log(HAM_USD), fill = as.factor(Anonymous)))+ labs(title = "Figure 2: Log(Hammer Price) Distribution by Attribution", x = "Log(Hammer Price)", y = "Attribution Type")
 
 attrib_price + theme(legend.position = "none")
 ```
-For some objective characteristics, there are distinct differences in between non-anonymous and anonymous paintings. As shown in Figure 5, non-anonymous paintings tend to have more diversity in the paintings' subject while most of the anonymous work is concentrated in religious scences. This is, in part, due to the [growing demand for religious and decorative pictures at the time of the 15th -17th century ](https://www.academia.edu/6145072/Painting_for_the_market_Commercialization_of_art_in_Antwerps_Golden_Age) but still an interesting distinction to make. In terms of similarities, nativity scenes were the most common subject for both anonymous and non-anonymous art followed by portraits and haigographic scenes (scenes depicting saints).
+For some objective characteristics, there are distinct differences in between non-anonymous and anonymous paintings. As shown in **Figure 1A**, non-anonymous paintings tend to have more diversity in the paintings' subject while most of the anonymous work is concentrated in religious scences. This is, in part, due to the [growing demand for religious and decorative pictures at the time of the 15th -17th century ](https://www.academia.edu/6145072/Painting_for_the_market_Commercialization_of_art_in_Antwerps_Golden_Age) but still an interesting distinction to make. In terms of similarities, nativity scenes were the most common subject for both anonymous and non-anonymous art followed by portraits and haigographic scenes (scenes depicting saints).
 
-Figure 6 illustrates how the median hammer price according to the paintings' subject do not have the same ordinal pattern across anonymous and non-anonymous paintings. For example, the subject matter with the lowest relative median hammer price in non-anonymous art is portraits whereas, among anonymous paintings, portraits have one of the highest relative median hammer prices. Thus, subject matter may be associated with hammer price differently depending on whether a piece is anonymous or not.
+**Figure 2A** illustrates how the median hammer price according to the paintings' subject do not have the same ordinal pattern across anonymous and non-anonymous paintings. For example, the subject matter with the lowest relative median hammer price in non-anonymous art is portraits whereas, among anonymous paintings, portraits have one of the highest relative median hammer prices. Thus, subject matter may be associated with hammer price differently depending on whether a piece is anonymous or not.
 
 ```{r}
+#1A
 Subject_Plot = ggplot(data = anon_data, aes(x=PI_TOPIC))+geom_bar() + labs(title= "Anonymous", x= "Subject", y="Count")+theme(axis.text.x = element_text(angle = 90,hjust=0.95,vjust=0.2))
 
 Subject_Plot2 = ggplot(data = non_anon_data, aes(x=PI_TOPIC))+geom_bar(fill= "blue") + labs(title= "Non-Anonymous", x= "Subject", y="Count")+theme(axis.text.x = element_text(angle = 90, hjust=0.95,vjust=0.2))
 ```
 
-```{r, fig.height= 3}
-grid.arrange(Subject_Plot2, Subject_Plot, ncol= 2, top = "Figure 5: Comparison of Painting Subject
-Between Non-Anonymous and Anonymous Paintings")
-
-```
-
 
 ```{r}
+#2A
 subject_price = group_by(anon_data, PI_TOPIC)
 subject_price = mutate(subject_price, Price_Med = median(HAM_USD, na.rm = T))
 
@@ -198,18 +203,9 @@ data_subject_price1 = distinct(subject_price1, PI_TOPIC, Price_Med)
 SubjectPrice_Plot_Condensed1 = ggplot(data = data_subject_price1, aes(PI_TOPIC, Price_Med))+geom_bar(stat= "identity", fill= "blue") + labs(title= "Non-Anonymous", x= "Subject", y="Median Hammer Price")+theme(axis.text.x = element_text(angle = 90))
 ```
 
-```{r fig.height= 4}
-grid.arrange( SubjectPrice_Plot_Condensed1, SubjectPrice_Plot_Condensed , top= "Figure 6: Hammer Price Medians by Subject", ncol=1)
-```
+**Figure 3A** illustrates how the log(2015 USD equivalent hammer prices) increased with the date of the recorded sale. As these hammer prices are adjusted for inflation using U.S. CPI, this trend suggests a greater demand/willingness to pay for paintings as the art economy continued to evolve and became more and more sophisticated.
 
-Figure 7 illustrates how the log(2015 USD equivalent hammer prices) increased with the date of the recorded sale. As these hammer prices are adjusted for inflation using U.S. CPI, this trend suggests a greater demand/willingness to pay for paintings as the art economy continued to evolve and became more and more sophisticated.
-
-```{r fig.height= 2.5}
-
-ggplot(data, aes(x=DATE, y= log(HAM_USD)))+geom_point() +labs(title = "Figure 7: Log(Hammer Price in 2015 USD) vs. Date of Sale", x= "Date", y="Log(Hammer Price USD)")
-
-```
-An important thing to note is that not all characteristics differ depending on the anonymous status of a piece. Some relationships are consistent across art regardless of attribution. Through this analysis, we ensure that these characteristics are controlled for and included as we begin our modeling process. Figure 8 illustrates that despite the anonymous status of pieces, paintings in specified collection types tend to have higher price distributions than paintings with no information of collection type, and sale records indicate that evening sales tend to have higher price distributions than day sales. 
+An important thing to note is that not all characteristics differ depending on the anonymous status of a piece. Some relationships are consistent across art regardless of attribution. Through this analysis, we ensure that these characteristics are controlled for and included as we begin our modeling process. **Figure 4A** illustrates that despite the anonymous status of pieces, paintings in specified collection types tend to have higher price distributions than paintings with no information of collection type, and sale records indicate that evening sales tend to have higher price distributions than day sales. 
 
 ```{r}
 Day_Sale_anon = anon_data
@@ -226,6 +222,7 @@ n_anon_sal=ggplot(Day_Sale_non_anon, aes(x=Sales_type, y=log(HAM_USD)))+geom_box
 ```
 
 ```{r}
+
 Collection_data_a = subset(anon_data, select = c("TYPE_COLLECTION","HAM_USD" ))
 Collection_data_a$TYPE_COLLECTION = as.character(Collection_data_a$TYPE_COLLECTION)
 Collection_data_a$TYPE_COLLECTION[Collection_data_a$TYPE_COLLECTION=="Belgium_coll"] <- "Belgium"
@@ -252,9 +249,6 @@ Collection_data_na$TYPE_COLLECTION = factor(Collection_data_na$TYPE_COLLECTION, 
 collection_anon = ggplot(Collection_data_a, aes(x=TYPE_COLLECTION, y=log(HAM_USD)))+geom_boxplot() + labs(title="Anonymous", x= "Collection Type", y ="Log(Hammer Price)")
 collection_non_anon = ggplot(Collection_data_na, aes(x=TYPE_COLLECTION, y=log(HAM_USD)))+geom_boxplot(fill="blue")+ labs(title="Non-Anonymous", x= "Collection Type", y ="Log(Hammer Price)")
 ```
-```{r}
-grid.arrange(collection_non_anon, collection_anon,n_anon_sal, anon_sal,  ncol=2, top = "Figure 8: Consistent Trends Seen in Sale Type and Collection Type")
-```
 
 These findings are all informative for our selection of variables in the model (described in the next section).
 
@@ -267,46 +261,30 @@ In order to distill art valuations to the objective aspects of the art itself, w
 ### Shared by Both Models
 
 * The type of sale (day or evening) was included as, traditionally, compared to day sales, evening sales tend to [have fewer works being sold, and these pieces tend to sell at much higher price points](https://www.fineartassetadvisor.com/blog/art-amp-finance-newsletter-35-what-is-the-difference-between-daytime-amp-evening-art-auctions).
-
 * The associated surface area of the piece recorded in the sale is included because this characteristic is a purely objective fact of a work. Because this analysis is interested in objective factors (not tied to the clout or reputation of the creator) that may be associated with the value of art, we will include this. Furthermore, previous [research](https://www.fineartassetadvisor.com/blog/art-amp-finance-newsletter-35-what-is-the-difference-between-daytime-amp-evening-art-auctions) shows evidence of the size of paintings having a positive relationship with price. We divided this variable by 500 and centered it at the mean surface area of the data set (4,956.9 sqr cm) to make for more interpretable results
-
 * The adjunct century of the piece is included as an objective characteristic. This dataset includes 15th - 17th century work with 2,854 missing values for this variable initially. Upon closer examination, all but 3 observations were associated with a school from the 16th-17th century (mentioned in the details of a painting's associated school). With this, an additional category was made to account for 16th - 17th c. work and another category to reflect "missing".
-
 * The associated artistic School which refers to a common [style, inspiration, training, or aims](https://www.thoughtco.com/difference-between-art-styles-schools-and-movements-2573812) was included. This, again, is an objective quality of a piece that may be associated with median hammer price.
-
 * The subject or topic of the piece in a sale and the year of the sale: The subject of a piece is objective and an important distinction to be made when comparing against other pieces. The year of the sale is important in understanding the context of the purchase and the nature of the art economy at the time. Furthermore, as the [taste of art markets change](https://www.royalacademy.org.uk/event/courses-and-classes-a-history-of-the-art-market-an-evolution-of-taste-art-history-theory-business) the prices reflect changes in demand. Therefore, we will also include an interaction term with date purchased and subject to reflect the evolution of preference and trends in the art economy. The date variable was centered at 1946 (the earliest observation in our dataset).
-
 * The currency used in the sale: Currency may indirectly link to the buyer's cultural taste or country of origin. We will include this variable to control for potential preference.
-
 * The collection type associated with the piece sold: Most of the sales do not include this information, but whether a piece was in a private collection (owned by a single entity), or in a museum collection (shown at a museum), etc, is an important factor to control for when understanding price as more well-known pieces may have been showcased more.
-
 * The reputation of the auction house in the sale: This is to control for potential confounding factors driving hammer prices. The status of the auction house is often linked to the quality of works and also buyers.
-
 * A binary variable was created to indicate if there are publications on the painting or not: Having more information or recognition of a piece may be associated with its value.
-
 * A binary variable indicating if the painting was dated or not. Having more information about the exact time period of a piece may be associated with its median hammer price price.
-
 * A variable indicating the material the painting was on and another variable for the medium of the painting (i.e. oil or tempera): These are material and objective characteristics of a piece and are relevant to look at when understanding the value of a piece independent of it's associated authorship status.
-
 * The Consumer Price Index (CPI) is included as it gives context to the state of the (U.S.) economy during the time of the sale. As the U.S. economy is closely intertwined with other developed countries, this proxy is considered adequate for reflecting economic trends during the time of the sale. This variable was centered at the CPI during 1946 (8.3).
-
 * A binary variable indicating if the painting had been in an exhibit or not. Such indication may control for status of a piece and thus what a buyer is willing to bid.
 
 
 ### Unique to Model for Anonymous Paintings
 
 The attribute of "Anonymous" was created to account for pieces in which there was no formal attribution given. This distinction was used when differentiating data that was associated with anonymous and non-anonymous work.
-
 * A binary variable was created to determine if the piece had been reattributed--meaning the original was deemed inaccurate by a relevant expert. For anonymous art, this would mean that the piece had been attributed to an artist or group, and then later determined that such attribution was inaccurate and now it is deemed an "anonymous" work.
 
 ### Unique to Model for Non-Anonymous Paintings
 
 For our model fit to non-anonymous data, we will include the attribution type. As mentioned previously, these attributions (naming mechanisms) are important distinctions when considering the valuation of art. For example, a painting that is verified as being "by" a particular artist is more informative for a buyer than "attributed to", "School of", etc., and thus, [the buyer is likely willing to pay more](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2471488). Pieces with the attribute "by & studio" were included in the "by" attribute since both can be associated with a specific artist.
-
 * Indication of the type of reattribution a painting may have had: A painting may have had no reattribution, or a negative reattribution meaning that the piece used to have a more profitable attribution than the one it bears for the sale, or a positive reattribution meaning that the piece used to have a less profitable attribution than the one it bears for the sale. The anonymous paintings do not have positive reattributions because being "anonymous" is regarded as the least profitable attribution.
-
 * Binary indication of whether a painting was examined via scientific technology for authentication purposes: This information further strengthens Only one painting in the anonymous data was associated with this so for the sake of simplicity, it will only be included in the non-anonymous data.
-
 * Binary indication of whether a piece had a signature or not: This allows for greater authentication and information for a buyer, potential associated with median hammer price. Because anonymous works do not have a known author, this variable is unique to the non-anonymous model.
 
 ## Removed Variables
@@ -436,21 +414,13 @@ final_model_a[c(1:3, 6,10, 15,18, 29,36,38,40, 42,43, 44, 46, 47, 49,50, 51, 54,
 **The baseline for this model can be found in the appendix** We will consider the median hammer price in our interpretations rather than the mean as unconventionally high hammer prices caused by extreme bidding distort the average. Note that "accounting for all other factors" in the following interpretations refers to the baseline metrics. A 95% confidence interval was also calculated for each coefficient estimate.From the model, some interesting interpretations from the model are:
 
 * As expected, the median hammer price for an evening sale vs. a day sale is expected to multiply by a factor of 5.534, after accounting for all other factors.
-
 * For every additional 500 sqr cm (just over 0.5 sqr ft) the median hammer price is expected to multiply by a factor of 1.014, after accounting for all other factors.
-
 * The median hammer price for a purchase in USD vs. Pounds is expected to multiply by a factor of 1.259, after accounting for all other factors.
-
 * The median hammer price for a purchase from a private collected vs. an unspecified collection is expected to multiply by a factor of 1.485, after accounting for all other factors.
-
 * The median hammer price for an auction not at top tier auction houses is expected to be less than at a top tier, after accounting for all other factors.
-
 * The median hammer price for a painting with publications on the work is expected to multiply by a factor of 1.690 compared to no publications, after accounting for all other factors.
-
 *The median hammer price for painting on canvas is expected to multiply by a factor of 0.742 compared to a panel after accounting for all other factors.
-
 * For each additional year above 1946, the median hammer price for a sale is expected to multiply by a factor of 2.450, after accounting for all other factors.
-
 * For each additional year above 1946, the median hammer price for a mythology vs. a religious topic painting is expected to multiply by a factor of 1.278	, after accounting for all other factors.
 
 ```{r}
@@ -562,29 +532,47 @@ final_model_non_a[c(1:3, 6,10, 15,18, 30,40,43, 45, 47,48, 49,51,52, 54, 55, 60:
 **The baseline for this model can be found in the Appendix.** Note that "accounting for all other factors" in the following interpretations refers to the baseline metrics. From the model, some interesting interpretations are:
 
 * Similar to the anonymous work, the median hammer price for an evening sale vs. a day sale is expected to multiply by a factor of greater than 1, after accounting for all other factors.
-
 * For every additional 500 sqr cm (just over 0.5 sqr ft) the median hammer price is expected to multiply by a factor of 1.014, after accounting for all other factors. This is the same factor as seen in the anonymous model.
-
 * As expected, the median hammer price for attributions considered less prestigious as "by" are all expected to multiply by a factor of less than one, with "after" and "manner of" having the lowest estimates, after accounting for all other factors.
-
-* The median hammer price for pieces that have been in an exhibit vs. have not is expected to multiply by a factor of 1.742	, after accounting for all other factors.
-
+* The median hammer price for pieces that have been in an exhibit vs. have not is expected to multiply by a factor of 1.742, after accounting for all other factors.
 * Similar to the anonymous work, the median hammer price for an dated painting vs. not dated is expected to multiply by a factor of greater than 1, after accounting for all other factors.
-
+* Similar to the anonymous work, the median hammer price for an painting on canvas vs. on a panel is expected to multiply by a factor of less than 1, after accounting for all other factors.
 * For each additional year above 1946, the median hammer price for a sale is expected to multiply by a factor of 1.074, after accounting for all other factors. Like the anonymous model, this factor is greater than one.
-
 * For each additional year above 1946, the median hammer price for a landscape vs. a religious topic painting is expected to multiply by a factor of 0.988, after accounting for all other factors. Unlike the anonymous model, this factor is less than one although the coefficient was not deemed significant in the anonymous model.
 
 # Discussion
 
-As seen in our interpreted results, the two fitted model for anonymous and non-anonymous works had both similar and dissimilar associations between median hammer price and independent variables after adjusting for baseline metrics. As our focus was mainly concerned with objective factors that are associated with the "value" (in this context measured by hammer price) of art, we will focus on the model fit to the anonymous sales and then look at the non-anonymous model for interesting comparisons. Coefficients for objective characteristics like surface area, century made, School, material, and subject/topic of the painting were all deemed significant in the model. Analyzing anonymous art sales serves as a way to distill artwork (in this case Flemish paintings from the 15th-17th century) down to the pure qualities that are associated with it's value. Ultimately, understanding art outside of the context of it's creator can strip it to a more intrinsic value.
+Some limitations to this analysis rest in the asymmetry of accessible data for anonymous vs. non-anonymous work. There was substantially more data for non-anonymous pieces potentially due to the fact that auctions, in general, prioritize the sales of attributed work over anonymous work, or potentially due to the fact that there are less anonymous Flemish paintings from the 15th - 17th c. in existence. Another limitation is that there is no evidence to believe that findings for these paintings (Flemish 15th - 17th century) can be extrapolated to other genres. The findings of this analysis are informative and enlightening, yet there is no evidence to suggest they are generalizable to other genres of work.  
 
-Some limitations to this analysis rest in the asymmetry of accessible data for anonymous vs. non-anonymous work. There was substantially more data for non-anonymous pieces. Another limitation is that there is no evidence to believe that findings for these paintings (Flemish Old Master from 15th - 17th century) can be extrapolated to other genres. 
+As seen in the interpreted results, the two fitted model for anonymous and non-anonymous works had both similar and dissimilar associations between median hammer price and independent variables after adjusting for baseline metrics. The purpose of creating two models was to be able to isolate factors associated with median hammer price that were not associated with the subjective reputation or clout of a painting's creator. Even still, both the anonymous and non-anonymous model (at the baseline of highest attribution "by") presented evidence for some similar associations between the response (median hammer price) and purely objective independent variables such as type of auction (evening or day), painting surface area, whether the painting was dated, material of the painting, and year of the sale. From the non-anonymous model, there is evidence to suggest that the attribution title is significantly associated with the median hammer price. These findings help art historians and auctioneers to contextualize how art is valued in contemporary markets and how, if stripped away of material prestige, there are inherent qualities of art tied to its worth.Analyzing anonymous art sales serves as a way to distill artwork (in this case Flemish paintings from the 15th-17th century) down to the pure qualities that are associated with it's value. 
 
-With a significant lack of accessibility and transparency in auction houses and art markets, there remains an extensive amount of meaningful research to be done, especially in the area of anonynmous work. Rademecker's research and data provides a robust example of the type of insights that can be gained from such analases. 
+Ultimately, with a significant lack of accessibility and transparency in auction houses and art markets, there remains an extensive amount of meaningful research to be done, especially in the area of anonynmous work. Hopefully, analyses like this can be conducted on other areas of art and motivate art market players--who have a notorious reputation for elusive pricing and unobtainable records/data--to engage in more transparent transactions and art valuations.
 
 
 # Appendix
+
+```{r, fig.height= 3}
+#1A
+grid.arrange(Subject_Plot2, Subject_Plot, ncol= 2, top = "Figure 1A: Comparison of Painting Subject
+Between Non-Anonymous and Anonymous Paintings")
+
+```
+
+```{r fig.height= 4}
+#2A
+grid.arrange( SubjectPrice_Plot_Condensed1, SubjectPrice_Plot_Condensed , top= "Figure 2A: Hammer Price Medians by Subject", ncol=1)
+```
+
+```{r fig.height= 2.5}
+#3A
+ggplot(data, aes(x=DATE, y= log(HAM_USD)))+geom_point() +labs(title = "Figure 3A: Log(Hammer Price in 2015 USD) vs. Date of Sale", x= "Date", y="Log(Hammer Price USD)")
+
+```
+
+```{r}
+#4A
+grid.arrange(collection_non_anon, collection_anon,n_anon_sal, anon_sal,  ncol=2, top = "Figure 4A: Consistent Trends Seen in Sale Type and Collection Type")
+```
 
 ## Releveling/Baseline Assumptions For Both Models
 * Antwerpen School was made the baseline for the school of a painting because it has the most observations.

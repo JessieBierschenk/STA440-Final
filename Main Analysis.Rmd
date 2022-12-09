@@ -1,6 +1,8 @@
 ---
 output: pdf_document
 urlcolor: blue
+header-includes:
+  - \usepackage{float}
 ---
 # Understanding & Quantifying How Paintings are "Valued"
 \vspace{-0.4cm}
@@ -68,7 +70,7 @@ The dataset includes 1,581 sales of purely anonymous paintings and 11,630 sales 
 
 The more specific the attribution, the more valuable a piece is to a buyer. Art that cannot be given some sort of attribute is considered anonymous. According to Rademecker, there is little work done in art history or economic research that explores this relationship of attributes with price. And, given the guarded and secretive nature art markets, it is difficult to access auction/price data and even more difficult to access information on anonymous, obscure paintings not tied to any creator (attribute);  because of this, this analysis will use the unique opportunity to analyze anonymous work (as well as attribuyted work) to form a more comprehensive understanding of art valuations. The main response vairable of interest in this analysis is the median hammer price (To allow for inflation, prices are deflated using the US Consumer Price Index, and expressed in 2015 US dollars). The median is the intended interest because [meticulous rounding up by auctioneers and theatrical tactics](https://www.taipeitimes.com/News/editorials/archives/2015/11/04/2003631633) can create highly skewed hammer prices; thus, the median is thought to be a more reflective summary statistic.
 
-Table 1 shows the frequency of attribute types in our data set. 12% of the pieces in this dataset are considered anonymous while the rest have some attribute.
+**Table 1** shows the frequency of attribute types in our data set. 12% of the pieces in this dataset are considered anonymous while the rest have some attribute.
 
 
 ```{r}
@@ -104,10 +106,11 @@ rownames(tab_freq_attrib)=c("Count", "Percent")
 
 ```
 
+
 ```{r}
 tab_freq_attrib %>% 
-  kbl(align = rep("c", 4), caption = "Frequency of Attributes in Data") %>%
-  kable_styling(latex_options= c("striped","scale_down"))
+  kbl( caption = "Frequency of Attributes in Data") %>%
+  kable_styling(latex_options= c("striped","scale_down", "HOLD_position"))
 ```
 
 
@@ -254,7 +257,7 @@ These findings are all informative for our selection of variables in the model (
 
 # Methodology
 
-In order to distill art valuations to the objective aspects of the art itself, we will create and analyze two models: one model fit to the data only concerning anonymous paintings, and the other fit to the data only concerning paintings with some attribution. These models will (mostly) include the same independent variables.
+In order to distill art valuations to the objective aspects of the art itself, we will create and analyze two models: one model fit to the data only concerning anonymous paintings, and the other fit to the data only concerning paintings with some attribution. These models will (mostly) include the same independent variables. With the response variable (hammer price) for both models being skewed, a log transformation will be done so the patterns in the data are more interpretable and the regression model better satisfies linear regression assumptions (**See Appendix for Model Assumptions**). This method was used as results can be easily interpretted by art historians/economists unfamiliar with more sophisticated methods.
 
 ## (Manipulated) Variables Included
 
@@ -423,9 +426,6 @@ final_model_a[c(1:3, 6,10, 15,18, 29,36,38,40, 42,43, 44, 46, 47, 49,50, 51, 54,
 * For each additional year above 1946, the median hammer price for a sale is expected to multiply by a factor of 2.450, after accounting for all other factors.
 * For each additional year above 1946, the median hammer price for a mythology vs. a religious topic painting is expected to multiply by a factor of 1.278	, after accounting for all other factors.
 
-```{r}
-#plot(full_model_anon)
-```
 
 
 ```{r}
@@ -574,25 +574,78 @@ ggplot(data, aes(x=DATE, y= log(HAM_USD)))+geom_point() +labs(title = "Figure 3A
 grid.arrange(collection_non_anon, collection_anon,n_anon_sal, anon_sal,  ncol=2, top = "Figure 4A: Consistent Trends Seen in Sale Type and Collection Type")
 ```
 
+## Removed Variables
+
+## Model Assumptions
+The assumptions for this model are as follows:
+1. Linearity: There is a linear relationship between the response (log(Hammer Price)) and each predictor variable.
+2. Constant Variance: The variability of the errors is equal for all values of the predictor variable.
+3. Normality: The errors follow a normal distribution.
+4. Independence: The errors are independent from each other.
+
+### Anonymous Model
+1. For linearity: The plot of standardized residuals vs. predicted shows no distinguishable pattern and for continuous, numeric variables there appears to be a linear relation with year sold and the response. For the painting's surface area, there does not appear to be a linear relationship, however because there is no distinguishable pattern, we will continue with this model although the linearity assumption is not entirely met.
+```{r}
+Anonymous_Model = full_model_anon
+res1 = resid(full_model_anon)
+plot(fitted(Anonymous_Model), res1, main = "standardized residuals vs. predicted")
+abline(0,0)
+```
+
+```{r fig.height= 2.5}
+gg_a_1 = ggplot(data= anon_data, aes(x=t, y = log(HAM_USD))) + geom_point() + labs(title= "Year Sold vs. Log(Hammer Price)", x= "Year Sold", y = "Log(Hammer Price)" )
+
+gg_a_2 = ggplot(data= anon_data, aes(x=dim2, y = log(HAM_USD))) + geom_point() + labs(title= "Year Sold vs. Log(Hammer Price)", x= "Surface Area (sqr cm)", y = "Log(Hammer Price)" )
+
+grid.arrange(gg_a_1, gg_a_2, ncol=2)
+```
+
+2. For Constant Variance, the vertical spread of the residuals is relatively constant across the plot. The constant variance condition is satisfied
+
+3. For normality, the errors follow approximately a normal distribution. Although not perfectly satisfied, we will continue with the model.
+
+```{r}
+qqnorm(res1)
+qqline(res1) 
+```
+4. Independence: We have no reason to believe that each observation is not independent of one another. Each observation is a unique sale not related to other pieces of art.
+
+### Non-Anonymous Model
+
+1. Same interpretaion as (1) anonymous model.
+```{r}
+Non_Anonymous_Model = full_model_non_anon
+res2 = resid(full_model_non_anon)
+plot(fitted(Non_Anonymous_Model), res2, main = "standardized residuals vs. predicted")
+abline(0,0)
+```
+
+```{r fig.height= 2.5}
+gg_a_3 = ggplot(data= non_anon_data, aes(x=t, y = log(HAM_USD))) + geom_point() + labs(title= "Year Sold vs. Log(Hammer Price)", x= "Year Sold", y = "Log(Hammer Price)" )
+
+gg_a_4 = ggplot(data= subset(non_anon_data, dim2 <150000), aes(x=dim2, y = log(HAM_USD))) + geom_point() + labs(title= "Year Sold vs. Log(Hammer Price)", x= "Surface Area (sqr cm)", y = "Log(Hammer Price)" )
+
+grid.arrange(gg_a_3, gg_a_4, ncol=2)
+```
+2. Same interpretaion as (2) anonymous model.
+3. Same interpretaion as (3) anonymous model.
+
+```{r}
+qqnorm(res2)
+qqline(res2) 
+```
+4. Same interpretaion as (4) anonymous model.
+
+
 ## Releveling/Baseline Assumptions For Both Models
 * Antwerpen School was made the baseline for the school of a painting because it has the most observations.
-
 * 15th century was made the baseline for painting's century because it is the earliest time period and it is most logical to interpret coefficients in chronological order.
-
 * The Religious Topic was made the baseline for painting subject matter because it has the most observations.
-
 * Great Britain's Pound was made the baseline for currency used in sale because has the most observations.
-
 * The un-mentioned collection type was made the baseline for collection type as it has the most observations and it has the lowest distribution in price.
-
 * The most top tier auction house was made the baseline for auction house prestige as it has the most observations and is logical to compare from top organizations
-
 * Oil medium was made the baseline for painting medium as it has the most observations and, during the 15-17th century, most work was done in oil.
-
 * Panel was made the baseline for material as it has the most observations.
-
-
-## Removed Variables
 
 ## Baseline for Anonymous Model 
 An evening sale; The dataset's average painting surface area of 4,956 sqr cm; 15th century painting; Antwerpen School; Paid for with British Pounds; Collection type not specified; Sold in the first year recorded in the dataset (1946); Of a religious topic; Sold at a top tier auction house; No publications on the painting; No date on the painting; Painted in oil on a panel; CPI at time of sale was 8.3 (recorded for 1946); Was not Reattributed; And has not been in an exhibit.

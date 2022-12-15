@@ -551,6 +551,8 @@ Some limitations to this analysis rest in the asymmetry of accessible data for a
 
 As seen in the interpreted results, the two fitted model for anonymous and non-anonymous works had both similar and dissimilar associations between median hammer price and independent variables after adjusting for baseline metrics. The purpose of creating two models was to be able to isolate factors associated with median hammer price that were not associated with the subjective reputation or clout of a painting's creator. Even still, both the anonymous and non-anonymous model (at the baseline of highest attribution "by") presented evidence for some similar associations between the response (median hammer price) and purely objective independent variables such as type of auction (evening or day), painting surface area, whether the painting was dated, material of the painting, and year of the sale. From the non-anonymous model, there is evidence to suggest that the attribution title is significantly associated with the median hammer price. These findings help art historians and auctioneers to contextualize how art is valued in contemporary markets and how, if stripped away of material prestige, there are inherent qualities of art tied to its worth.Analyzing anonymous art sales serves as a way to distill artwork (in this case Flemish paintings from the 15th-17th century) down to the pure qualities that are associated with it's value. 
 
+Future analyses may explore the use of quantile regression for art prices given that hammer prices operate on many different orders of magnitude. The relationships between the predictors on high, medium, and low quantiles, might be different and quantile regression can identify this. While this analysis, for the sake of simplicity and digestibility, only looked at log-transformed regression analysis, further research may explore differences in predictor-response relationships for different price quantiles (i.e. differences in predictor associations for cheap vs. expenive paintings). 
+
 Ultimately, with a significant lack of accessibility and transparency in auction houses and art markets, there remains an extensive amount of meaningful research to be done, especially in the area of anonynmous work. Hopefully, analyses like this can be conducted on other areas of art and motivate art market players--who have a notorious reputation for elusive pricing and unobtainable records/data--to engage in more transparent transactions and art valuations.
 
 
@@ -584,22 +586,22 @@ Firstly, variables removed from this analysis were redundant variables with diff
 
 ## Full Model Formulas
 ### Anonymous Work Model
-$$Hammer.Price_i= exp(\beta_0)exp(\beta_{1}Sales.Type{i}+\beta_2Surface.Area_{i}+
-\beta_3Century.Made_{i}+\beta_4School_{i}+\beta_5Subject_{i}+\beta_6Currency_{i}+
-\beta_7Collection.Type_{i}+\beta_8Year.Purchased_{i}+
-\beta_9Auction.House.Prestige_{i}) + \beta_10Literature_{i}+\beta_11Dated_{i}+
-\beta_12Medium_{i}+\beta_13Material_{i}+\beta_14US.CPI_{i}+
-\beta_15Previously.Attributed_{i}+ \beta_16Exhibit_{i}+
-\beta_17(Year.Purchased_{i}*Subject_{i})$$
+$$Hammer.Price_i= exp(\beta_0)exp(\beta_{1}Sales.Type_{i}+\beta_2Surface.Area_{i}+$$
+$$\beta_3Century.Made_{i}+\beta_4School_{i}+\beta_5Subject_{i}+\beta_6Currency_{i}+$$
+$$\beta_7Collection.Type_{i}+\beta_8Year.Purchased_{i}+ $$
+$$\beta_9Auction.House.Prestige_{i}) + \beta_{10}Literature_{i}+\beta_{11}Dated_{i}+ $$
+$$\beta_{12}Medium_{i}+\beta_{13}Material_{i}+\beta_{14}US.CPI_{i}+ $$
+$$\beta_{15}Previously.Attributed_{i}+ \beta_{16}Exhibit_{i}+$$
+$$\beta_{17}(Year.Purchased_{i}*Subject_{i})$$
 
 ### Non-Anonymous Work Model
-$$Hammer.Price_i= exp(\beta_0)exp(\beta_{1}Sales.Type{i}+\beta_2Surface.Area_{i}+
-\beta_3Century.Made_{i}+\beta_4School_{i}+\beta_5Subject_{i}+\beta_6Currency_{i}+
-\beta_7Collection.Type_{i}+\beta_8Year.Purchased_{i}+
-\beta_9Auction.House.Prestige_{i}) + \beta_10Literature_{i}+\beta_11Dated_{i}+
-\beta_12Medium_{i}+\beta_13Material_{i}+\beta_14US.CPI_{i}+
-\beta_15Reattribution.Type_{i}+ \beta_16Exhibit_{i}+ \beta_17Signature_{i}+ 
-\beta_18Scientific.Investigation_{i}+  \beta_19(Year.Purchased_{i}*Subject_{i})$$
+$$Hammer.Price_i= exp(\beta_0)exp(\beta_{1}Sales.Type_{i}+\beta_2Surface.Area_{i}+$$
+$$\beta_3Century.Made_{i}+\beta_4School_{i}+\beta_5Subject_{i}+\beta_6Currency_{i}+ $$
+$$\beta_7Collection.Type_{i}+\beta_8Year.Purchased_{i}+ $$
+$$\beta_9Auction.House.Prestige_{i}) + \beta_{10}Literature_{i}+\beta_{11}Dated_{i}+ $$
+$$\beta_{12}Medium_{i}+\beta_{13}Material_{i}+\beta_{14}US.CPI_{i}+$$ 
+$$\beta_{15}Reattribution.Type_{i}+ \beta_{16}Exhibit_{i}+ \beta_{17}Signature_{i}+  $$
+$$\beta_{18}Scientific.Investigation_{i}+  \beta_{19}(Year.Purchased_{i}*Subject_{i})$$
 
 
 ## Model Assumptions
@@ -694,33 +696,33 @@ final_model_non_a %>%
 ## Additional Exploration into Quantile Regression
 
 ```{r}
-quants = seq(.2, .8, by = .01)
-temp=matrix(nrow = length(quants), ncol = 2)
-for(i in 1:length(quants)){
-  mod = rq(data= model_a_data, HAM_USD ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + Prev_Attrib + EXHIB, tau =quants[i])
-  temp[i,]=summary(mod)$coef[3, 1:2]
-}
-temp = temo[1:90,]
-temp = as.data.frame()
-
-
-
-a_q10 = rq(data= model_a_data, log(HAM_USD) ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + Prev_Attrib + EXHIB, tau = 0.5:.1)
-a_q25 = rq(data= model_a_data, HAM_USD ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + Prev_Attrib + EXHIB, tau = 0.25)
-a_q50 = rq(data= model_a_data, HAM_USD ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + Prev_Attrib + EXHIB, tau = 0.50)
-a_q75 = rq(data= model_a_data, HAM_USD ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + Prev_Attrib + EXHIB, tau = 0.75)
-a_q90 = rq(data= model_a_data, log(HAM_USD) ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES  + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + Prev_Attrib + EXHIB, tau = 0.90:0.95)
-
-summary(a_q10)
-
-
-na_q10 = rq(data= model_na_data, HAM_USD ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + PI_ATTRIB + Scientific_Investig + SIG+ EXHIB + TYPE_REATTRIB, tau= 0.5:.1)
-na_q25 = rq(data= model_na_data, log(HAM_USD) ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + PI_ATTRIB + Scientific_Investig + SIG+ EXHIB + TYPE_REATTRIB, tau =0.5:.25)
-na_q50 = rq(data= model_na_data, log(HAM_USD) ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + PI_ATTRIB + Scientific_Investig + SIG+ EXHIB + TYPE_REATTRIB, tau=.5)
-na_q75 = rq(data= model_na_data, HAM_USD ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + PI_ATTRIB + Scientific_Investig + SIG+ EXHIB + TYPE_REATTRIB, tau=.75)
-na_q90 = rq(data= model_na_data, HAM_USD ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + PI_ATTRIB + Scientific_Investig + SIG+ EXHIB + TYPE_REATTRIB, tau = .9)
-
-summary(na_q50 )
+# quants = seq(.2, .8, by = .01)
+# temp=matrix(nrow = length(quants), ncol = 2)
+# for(i in 1:length(quants)){
+#   mod = rq(data= model_a_data, HAM_USD ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + Prev_Attrib + EXHIB, tau =quants[i])
+#   temp[i,]=summary(mod)$coef[3, 1:2]
+# }
+# temp = temo[1:90,]
+# temp = as.data.frame()
+# 
+# 
+# 
+# a_q10 = rq(data= model_a_data, log(HAM_USD) ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES + Literature + DAT + PI_TECH + PI_MAT  + Prev_Attrib + EXHIB, tau = .1)
+# a_q25 = rq(data= model_a_data, HAM_USD ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + Prev_Attrib + EXHIB, tau = 0.25)
+# a_q50 = rq(data= model_a_data, HAM_USD ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + Prev_Attrib + EXHIB, tau = 0.50)
+# a_q75 = rq(data= model_a_data, HAM_USD ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + Prev_Attrib + EXHIB, tau = 0.75)
+# a_q90 = rq(data= model_a_data, log(HAM_USD) ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES  + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + Prev_Attrib + EXHIB, tau = 0.90:0.95)
+# 
+# summary(a_q10)
+# 
+# 
+# na_q10 = rq(data= model_na_data, HAM_USD ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + PI_ATTRIB + Scientific_Investig + SIG+ EXHIB + TYPE_REATTRIB, tau= 0.5:.1)
+# na_q25 = rq(data= model_na_data, log(HAM_USD) ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + PI_ATTRIB + Scientific_Investig + SIG+ EXHIB + TYPE_REATTRIB, tau =0.5:.25)
+# na_q50 = rq(data= model_na_data, log(HAM_USD) ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + PI_ATTRIB + Scientific_Investig + SIG+ EXHIB + TYPE_REATTRIB, tau=.5)
+# na_q75 = rq(data= model_na_data, HAM_USD ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + PI_ATTRIB + Scientific_Investig + SIG+ EXHIB + TYPE_REATTRIB, tau=.75)
+# na_q90 = rq(data= model_na_data, HAM_USD ~ Sales_type + dim2 + adj_century + BY_SCHOOL + PI_TOPIC + CURR + TYPE_COLLECTION + t + AH_TYPES +PI_TOPIC:t + Literature + DAT + PI_TECH + PI_MAT + PI_CPI_OK + PI_ATTRIB + Scientific_Investig + SIG+ EXHIB + TYPE_REATTRIB, tau = .9)
+# 
+# summary(na_q50 )
 
 ```
 
